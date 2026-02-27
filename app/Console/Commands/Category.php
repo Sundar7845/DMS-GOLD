@@ -25,7 +25,7 @@ class Category extends Command
      *
      * @var string
      */
-    protected $description = 'Category uploaded successfully';
+    protected $description = 'Category uploaded successfully!';
 
     /**
      * Create a new command instance.
