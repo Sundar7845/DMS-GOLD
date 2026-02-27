@@ -1,0 +1,1868 @@
+var baseurl = window.location.origin;
+var windowWidth = window.innerWidth;
+$(document).ready(function () {
+    //qty
+    qtyplusminus();
+});
+$("#add-moq").change(function () {
+    if (this.checked) {
+        $(".card-checkbox").prop("checked", true);
+    } else {
+        $(".card-checkbox").prop("checked", false);
+    }
+});
+function qtyplusminus() {
+    $(".quantity-container").each(function () {
+        var container = $(this);
+        var qtyInput = container.find(".qty");
+        var productId = container.data("product-id");
+        var moq = parseInt($("#moq" + productId).val()) || 1;
+        var qty = $("#qty" + productId).val();
+        // var stock = $("#stockqty").val();
+
+        var stock = parseInt(qtyInput.data("stock")) || 1;
+
+        container.find(".qtyplus").click(function (e) {
+            e.preventDefault();
+            var currentVal = parseInt(qtyInput.val());
+            if (!isNaN(currentVal)) {
+                if (currentVal < stock) {
+                    qtyInput.val(currentVal + 1);
+                    container.find(".qtyplus").css("color", "black");
+                } else {
+                    qtyInput.val(stock); // Clamp to stock limit
+                    container.find(".qtyplus").css("color", "red");
+                }
+            } else {
+                qtyInput.val(moq);
+            }
+        });
+
+        container.find(".qtyminus").click(function (e) {
+            e.preventDefault();
+            var currentVal = parseInt(qtyInput.val());
+            if (!isNaN(currentVal) && currentVal > moq) {
+                qtyInput.val(currentVal - 1);
+                container.find(".qtyminus").css("color", "black");
+                container.find(".qtyplus").css("color", "black");
+            } else {
+                qtyInput.val(moq);
+                container.find(".qtyminus").css("color", "red");
+            }
+        });
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const gridButton = document.querySelector(".grid-view");
+    const listButton = document.querySelector(".list-view");
+    const productCards = document.querySelector(".shop-page_product-cards");
+
+    // Function to set the default view based on screen size
+    function setDefaultView() {
+        if (window.innerWidth < 768) {
+            // Mobile screen
+            productCards.classList.remove("grid");
+            productCards.classList.add("list");
+            listButton.classList.add("active");
+            gridButton.classList.remove("active");
+        } else {
+            // Larger screens
+            productCards.classList.remove("list");
+            productCards.classList.add("grid");
+            gridButton.classList.add("active");
+            listButton.classList.remove("active");
+        }
+    }
+
+    // Call the function when the page loads
+    setDefaultView();
+
+    // Optionally, listen for window resize to adjust view dynamically
+    window.addEventListener("resize", setDefaultView);
+
+    gridButton.addEventListener("click", function () {
+        productCards.classList.remove("list");
+        productCards.classList.add("grid");
+        gridButton.classList.add("active");
+        listButton.classList.remove("active");
+    });
+
+    listButton.addEventListener("click", function () {
+        productCards.classList.remove("grid");
+        productCards.classList.add("list");
+        listButton.classList.add("active");
+        gridButton.classList.remove("active");
+    });
+});
+
+$(".top-dropdown-filters .btn").click(function () {
+    var target = $(this).attr("data-target");
+    var isExpanded = $(this).attr("aria-expanded") === "true";
+
+    // Remove "show" class from all other collapses
+    $(".top-dropdown-filters .collapse").not(target).removeClass("show");
+    // Set "aria-expanded" to false for all other buttons
+    $(".top-dropdown-filters .btn").not(this).attr("aria-expanded", "false");
+
+    // Toggle the current collapse
+    $(target).toggleClass("show");
+    // Set "aria-expanded" to the opposite of its current state for the clicked button
+    // $(this).attr('aria-expanded', !isExpanded);
+});
+
+function getProduct(id, page = 1) {
+    $(".pagination-links").attr("hidden", true);
+    var project_id = $("#decryptedProjectId").val();
+    var procategory = $("#procategory").val();
+    var purity = $("#purity").val();
+
+    // Split the value into an array using the comma as a delimiter
+    var procategoryArray = procategory.split(",");
+
+    var selectedItem = [];
+    $(".product").each(function () {
+        if (windowWidth > 300) {
+            $("#pageloader").fadeIn();
+        }
+
+        let val = $(this).val();
+        if ($(this).is(":checked")) {
+            if (!selectedItem.includes(val)) {
+                selectedItem.push(val);
+            }
+        } else {
+            // remove from array if unchecked
+            selectedItem = selectedItem.filter((item) => item !== val);
+        }
+    });
+    // Set the value of the hidden input field to the serialized string
+    $("#product").val(selectedItem);
+
+    $("#product_page").empty();
+    $.ajax({
+        type: "GET",
+        url: "/retailer/itemwiseproduct/" + id + "?page=" + page,
+        headers: {
+            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+        },
+        data: {
+            selectedItem: selectedItem,
+            project_id: project_id,
+            purity: purity,
+            procategoryArray: procategoryArray,
+            _token: $('meta[name="csrf-token"]').attr("content"),
+        },
+        dataType: "json",
+        success: function (result) {
+            // Check if any checkbox is checked
+            let isAnyCheckboxChecked = $(".product:checked").length > 0;
+            // Assign value to #subCollectionData based on the checkbox state
+            if (isAnyCheckboxChecked) {
+                $("#procategoryFilter").val(
+                    JSON.stringify(result.procategoryjson)
+                );
+                $("#purityFilter").val(JSON.stringify(result.purityjson));
+            } else {
+                $("#procategoryFilter").val(
+                    JSON.stringify(result.procategoryDefaultjson)
+                );
+                $("#purityFilter").val(
+                    JSON.stringify(result.purityDefaultjson)
+                );
+            }
+            console.log(result, "result");
+            if (result.itemwiseproduct.data.length == 0) {
+                $("#checkboxhidden").attr("hidden", "");
+                $("#addtocarthidden").attr("hidden", "");
+                $("#product_page").attr("hidden", "");
+                $("#notfound").empty();
+                var notfound = `<img src='${baseurl}/emptycart.gif'>`;
+                $("#notfound").append(notfound);
+                if (windowWidth > 300) {
+                    $("#pageloader").fadeOut();
+                }
+            } else {
+                $("#checkboxhidden").removeAttr("hidden", "");
+                $("#addtocarthidden").removeAttr("hidden", "");
+                $("#product_page").removeAttr("hidden", "");
+                $.each(result.itemwiseproduct.data, function (key, value) {
+                    $("#notfound").empty(); // Clear 'no results' notice if any
+                    let encryptedId = $("#encrypt" + value.id).val();
+                    let productDetailUrl =
+                        "/retailer/productdetail/" + encryptedId;
+                    let secureImg = value.secureFilename;
+                    let variantCount = value.variant_count ?? 1;
+                    let variants = value.variants ?? [];
+
+                    let safeDesignNo = value.DesignNo.toLowerCase()
+                        .replace(/[^a-z0-9]+/g, "-")
+                        .replace(/^-+|-+$/g, "");
+                    let productHTML = `
+                    <input type="hidden" name="weight${value.id}" id="weight${
+                        value.id
+                    }"
+                                value="${value.weight ?? ""}">
+                            <input type="hidden" name="size${
+                                value.id
+                            }" id="size${value.id}"
+                                value="${value.size ?? ""}">
+                            <input type="hidden" name="box${value.id}" id="box${
+                        value.id
+                    }"
+                                value="${value.style ?? ""}">
+                    <div class="card shop-page_product-card">
+                        <div class="card-img-top d-flex align-items-center justify-content-center position-relative">
+                            <a href="${productDetailUrl}">
+                                <img class="img-fluid prouduct_card-image load-secure-image" src="${baseurl}/load-loading.gif" data-secure="${secureImg}" width="255" height="255" alt="">
+                            </a>
+                            <div class="position-absolute card-purity purity-list">Purity: ${
+                                value.variant_purity ?? "N/A"
+                            }</div>
+                        </div>
+                
+                        <div class="card-body d-flex flex-column">
+                            <div class="card-title">
+                                <a href="${productDetailUrl}" class="text-decoration-none">${
+                        value.DesignNo
+                    }</a>
+                            </div>`;
+
+                    // MULTIPLE VARIANTS
+                    if (variantCount > 1 && variants.length > 1) {
+                        productHTML += `
+                        <div class="mt-3">
+                            <div class="card-text fw-bold">Multiple Sizes Available</div>
+                            <button class="btn btn-warning mt-2" data-bs-toggle="modal" data-bs-target="#productModal-${safeDesignNo}">
+                                View All Options
+                            </button>
+                
+                            <!-- Modal -->
+                            <div class="modal fade product-variants-modal" id="productModal-${safeDesignNo}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered modal-xl">
+                                    <div class="modal-content rounded-4 overflow-hidden">
+                                        <div class="modal-body p-4 d-flex flex-column flex-lg-row gap-4">
+                                            <div class="modal-image text-center flex-shrink-0" style="flex: 0 0 200px;">
+                                                <img class="img-fluid load-secure-image" src="${baseurl}/load-loading.gif" data-secure="${secureImg}" width="200" height="200" alt="${value.DesignNo}">
+                                            </div>
+                                            <div class="modal-details flex-grow-1 overflow-auto">
+                                                <h6 class="mb-2 fs-5" style="color:#7E7E7E;">Design Code: <span class="font-semibold text-dark">${value.DesignNo}</span></h6>
+                                                <p class="fw-medium fs-6 mb-4" style="color:#F78D1E;">Multiple Sizes Available</p>
+                                                <div class="overflow-auto">
+                                                    <table class="table table-bordered text-center align-middle">
+                                                        <thead class="table-dark border-0"><tr><th></th>`;
+
+                        variants.forEach((_, i) => {
+                            productHTML += `<th>Variant #${i + 1}</th>`;
+                        });
+
+                        productHTML += `</tr></thead><tbody>`;
+
+                        // Dynamic rows for variant attributes
+                        const attrs = [
+                            "Purity",
+                            "color",
+                            "unit",
+                            "style",
+                            "making",
+                            "size",
+                            "weight",
+                            "qty",
+                        ];
+                        const labels = [
+                            "Purity",
+                            "Color",
+                            "Unit",
+                            "Style",
+                            "Making %",
+                            "Size",
+                            "Weight",
+                            "In Stock",
+                        ];
+
+                        attrs.forEach((attr, i) => {
+                            productHTML += `<tr><td>${labels[i]}</td>`;
+                            variants.forEach((variant) => {
+                                let val = variant[attr] ?? "-";
+                                if (attr === "Weight" && val !== "-")
+                                    val += "g";
+                                if (attr === "Qty" && val !== "-")
+                                    val += " Pcs";
+                                productHTML += `<td>${val}</td>`;
+                            });
+                            productHTML += `</tr>`;
+                        });
+
+                        // Quantity input row
+                        productHTML += `<tr><td>Qty</td>`;
+                        variants.forEach((variant) => {
+                            productHTML += `<td>
+                              <input type="hidden"
+                                    name="mweight${variant.productID}"
+                                    id="mweight${variant.productID}"
+                                    value="${variant.weight ?? ""}">
+                                <input type="hidden"
+                                    name="msize${variant.productID}"
+                                    id="msize${variant.productID}"
+                                    value="${variant.size ?? ""}">
+                                <input type="hidden"
+                                    name="mbox${variant.productID}"
+                                    id="mbox${variant.productID}"
+                                    value="${variant.style ?? ""}">
+                                <div class="input-group quantity-input-group quantity-container">
+                                    <input type="button" value="-" class="qtyminus" field="quantity">
+                                    <input type="text" name="mquantity${
+                                        variant.productID
+                                    }" id="mquantity${
+                                variant.productID
+                            }" value="1" class="qty">
+                                    <input type="button" value="+" class="qtyplus" field="quantity">
+                                </div>
+                            </td>`;
+                        });
+                        productHTML += `</tr>`;
+
+                        // Add to cart row
+                        productHTML += `<tr><td>Add to Cart</td>`;
+                        variants.forEach((variant) => {
+                            let inCart =
+                                result.cart[variant.productID]?.length > 0;
+                            let cartQty =
+                                result.cartcount[variant.productID] ?? 0;
+                            productHTML += `<td>
+                                <button onclick="addforcart(${
+                                    variant.productID
+                                })" class="btn ${
+                                inCart ? "added-to-cart-btn" : "add-to-cart-btn"
+                            } spinner-button" data_id="card_id_${
+                                variant.productID
+                            }">
+                                    <span class="submit-text">${
+                                        inCart ? "ADDED TO CART" : "ADD TO CART"
+                                    }</span>
+                                    <span class="d-none spinner">
+                                        <span class="spinner-grow spinner-grow-sm" aria-hidden="true"></span>
+                                        <span role="status">Adding...</span>
+                                    </span>
+                                    <span id="applycurrentcartcount${
+                                        variant.productID
+                                    }" class="added-to-cart-badge ms-2">${cartQty}</span>
+                                </button>
+                            </td>`;
+                        });
+
+                        productHTML += `
+                            </tr></tbody></table>
+                        </div></div></div>
+                            <button type="button" class="btn btn-link close-btn" data-bs-dismiss="modal">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="25"
+                                                                height="25" viewBox="0 0 25 25" fill="none">
+                                                                <path
+                                                                    d="M12.375 23.75C10.8812 23.75 9.40205 23.4558 8.02198 22.8841C6.6419 22.3125 5.38793 21.4746 4.33166 20.4183C3.27539 19.3621 2.43752 18.1081 1.86587 16.728C1.29422 15.3479 1 13.8688 1 12.375C1 10.8812 1.29422 9.40205 1.86587 8.02197C2.43752 6.6419 3.27539 5.38793 4.33166 4.33166C5.38793 3.27539 6.6419 2.43752 8.02198 1.86587C9.40206 1.29422 10.8812 1 12.375 1C13.8688 1 15.3479 1.29422 16.728 1.86587C18.1081 2.43752 19.3621 3.2754 20.4183 4.33166C21.4746 5.38793 22.3125 6.6419 22.8841 8.02198C23.4558 9.40206 23.75 10.8812 23.75 12.375C23.75 13.8688 23.4558 15.3479 22.8841 16.728C22.3125 18.1081 21.4746 19.3621 20.4183 20.4183C19.3621 21.4746 18.1081 22.3125 16.728 22.8841C15.3479 23.4558 13.8688 23.75 12.375 23.75L12.375 23.75Z"
+                                                                    stroke="#535353" stroke-width="1.47967"
+                                                                    stroke-linecap="round" />
+                                                                <path d="M8.58203 8.58398L16.1654 16.1673"
+                                                                    stroke="#535353" stroke-width="1.47967"
+                                                                    stroke-linecap="round" />
+                                                                <path d="M16.168 8.58398L8.58464 16.1673"
+                                                                    stroke="#535353" stroke-width="1.47967"
+                                                                    stroke-linecap="round" />
+                                                            </svg></button>
+                        </div>
+                    </div>
+                </div>`;
+                    } else {
+                        // SINGLE VARIANT
+                        productHTML += `<div class="mt-3 grid cols-3 card-content_wrapper">`;
+
+                        const singleAttrs = [
+                            { key: "variant_unit", label: "Unit" },
+                            { key: "variant_style", label: "Style" },
+                            { key: "variant_making", label: "Making %" },
+                            { key: "variant_color", label: "Color" },
+                            { key: "variant_size", label: "Size" },
+                            {
+                                key: "variant_weight",
+                                label: "Weight",
+                                suffix: "g",
+                            },
+                        ];
+
+                        singleAttrs.forEach((attr) => {
+                            if (value[attr.key]) {
+                                productHTML += `
+                                <div class="d-flex flex-column gap-1">
+                                    <div class="card-text text-dark">${
+                                        attr.label
+                                    }</div>
+                                    <div class="product-card-badge">${
+                                        value[attr.key]
+                                    }${attr.suffix || ""}</div>
+                                </div>`;
+                            }
+                        });
+
+                        productHTML += `
+                        </div>
+                        <input type="hidden"
+                                name="mweight${value.id}"
+                                id="mweight${value.id}"
+                                value="${value.variant_weight ?? ""}">
+                            <input type="hidden"
+                                name="msize${value.id}"
+                                id="msize${value.id}"
+                                value="${value.variant_size ?? ""}">
+                            <input type="hidden"
+                                name="mbox${value.id}"
+                                id="mbox${value.id}"
+                                value="${value.variant_style ?? ""}">
+                        <div class="product-cart-qty-text mt-2">In Stock: <span>${
+                            value.variant_qty ?? "-"
+                        }</span> Pcs</div>
+                            <div class="shop-page-add-to-cart-btn mt-3">
+                                <div class="d-flex align-items-center">
+                                    <label class="me-2">Qty</label>
+                                    <div class="input-group quantity-input-group quantity-container">
+                                        <input type="button" value="-" class="qtyminus" field="quantity">
+                                        <input type="text" name="quantity" id="quantity${
+                                            value.id
+                                        }" value="1" class="qty">
+                                        <input type="button" value="+" class="qtyplus" field="quantity">
+                                    </div>
+                                </div>
+                                <button onclick="addforcart(${
+                                    value.id
+                                })" class="btn mt-3 ${
+                            result.cart[value.id]?.length
+                                ? "added-to-cart-btn"
+                                : "add-to-cart-btn"
+                        } spinner-button" data_id="card_id_${value.id}">
+                                    <span class="submit-text">${
+                                        result.cart[value.id]?.length
+                                            ? "ADDED TO CART"
+                                            : "ADD TO CART"
+                                    }</span>
+                                    <span class="d-none spinner">
+                                        <span class="spinner-grow spinner-grow-sm" aria-hidden="true"></span>
+                                        <span role="status">Adding...</span>
+                                    </span>
+                                    <span class="added-to-cart-badge ms-2">${
+                                        result.cartcount[value.id] ?? ""
+                                    }</span>
+                                </button>
+                            </div>`;
+                    }
+
+                    productHTML += `</div></div>`; // Close .card-body and .card
+                    $("#product_page").append(productHTML);
+                });
+
+                $(".loader").fadeOut();
+                if (windowWidth > 300) {
+                    $("#pageloader").fadeOut();
+                }
+                $("#pagination").empty();
+                // Append pagination links
+                var paginationHTML = `<div class="my-5 pagination-links">
+                <nav class="large-devices_pagination" style="padding-bottom: 100px;">
+                    <div class="d-flex gap-3 flex-wrap justify-content-between">
+                        <div>
+                             Showing ${result.itemwiseproduct.from} - ${result.itemwiseproduct.to} of ${result.itemwiseproduct.total} results
+                         </div>
+                         <ul class="pagination">`;
+
+                if (result.itemwiseproduct.current_page == 1) {
+                    paginationHTML += `<li class="page-item disabled">
+                     <span class="page-link">Previous</span>
+                 </li>`;
+                } else {
+                    paginationHTML += `<li class="page-item">
+                     <a class="page-link" href="javascript:void(0)" onclick="getProduct(${id},${
+                        result.itemwiseproduct.current_page - 1
+                    })" tabindex="-1">Previous</a>
+                 </li>`;
+                }
+
+                for (
+                    var page = Math.max(
+                        1,
+                        result.itemwiseproduct.current_page - 2
+                    );
+                    page <=
+                    Math.min(
+                        result.itemwiseproduct.last_page,
+                        result.itemwiseproduct.current_page + 2
+                    );
+                    page++
+                ) {
+                    if (page == result.itemwiseproduct.current_page) {
+                        paginationHTML += `<li class="page-item active">
+                         <span class="page-link">${page}</span>
+                     </li>`;
+                    } else {
+                        paginationHTML += `<li class="page-item">
+                         <a class="page-link"  href="javascript:void(0)" onclick="getProduct(${id},${page})">${page}</a>
+                     </li>`;
+                    }
+                }
+
+                if (
+                    result.itemwiseproduct.current_page ==
+                    result.itemwiseproduct.last_page
+                ) {
+                    paginationHTML += `<li class="page-item disabled">
+                     <span class="page-link">Next</span>
+                 </li>`;
+                } else {
+                    paginationHTML += `<li class="page-item">
+                     <a class="page-link"  href="javascript:void(0)" onclick="getProduct(${id},${
+                        result.itemwiseproduct.current_page + 1
+                    })">Next</a>
+                 </li>`;
+                }
+
+                paginationHTML += `</ul></div></nav>
+                <nav class="small-devices_pagination d-none">
+                    <div class="text-center">
+                        <a class="btn btn-dark px-4 py-2" href="javascript:void(0)" onclick="getProduct(${id},${
+                    result.itemwiseproduct.current_page + 1
+                })">See More
+                            Products</a>
+                    </div>
+                </nav></div>`;
+
+                $("#pagination").append(paginationHTML);
+            }
+            qtyplusminus();
+            $(".card-checkbox").click(function () {
+                if ($(this).is(":checked")) {
+                    $("#addalltocart").removeAttr("disabled");
+                } else {
+                    $("#addalltocart").attr("disabled", "disabled");
+                }
+            });
+
+            // Add click event listener to wishlist-svg buttons
+            const wishlistButtons = document.querySelectorAll(".wishlist-svg");
+
+            wishlistButtons.forEach((button) => {
+                button.addEventListener("click", function () {
+                    // Toggle the 'active' class to change the color on click
+                    this.classList.toggle("active");
+                });
+            });
+
+            if (isAnyCheckboxChecked) {
+                updateProCategoryFilters(result.procategoryjson);
+                updateMobileProCategoryFilters(result.procategoryjson);
+                updatePurityFilters(result.purityjson);
+                updateMobilePurityFilters(result.purityjson);
+            } else {
+                updateProCategoryFilters(result.procategoryDefaultjson);
+                updateMobileProCategoryFilters(result.procategoryDefaultjson);
+                updatePurityFilters(result.purityDefaultjson);
+                updateMobilePurityFilters(result.purityDefaultjson);
+            }
+            loadSecureImages();
+        },
+    });
+}
+
+function getProCategory(id, page = 1) {
+    $(".pagination-links").attr("hidden", true);
+    var project_id = $("#decryptedProjectId").val();
+    var product = $("#product").val();
+    var purity = $("#purity").val();
+
+    // Split the value into an array using the comma as a delimiter
+    var productArray = product.split(",");
+
+    var selectedprocategory = [];
+    $(".procategory").each(function () {
+        if (windowWidth > 300) {
+            $("#pageloader").fadeIn();
+        }
+
+        let val = $(this).val();
+        if ($(this).is(":checked")) {
+            if (!selectedprocategory.includes(val)) {
+                selectedprocategory.push(val);
+            }
+        } else {
+            // remove from array if unchecked
+            selectedprocategory = selectedprocategory.filter(
+                (item) => item !== val
+            );
+        }
+    });
+    // Set the value of the hidden input field to the serialized string
+    $("#procategory").val(selectedprocategory);
+
+    $("#product_page").empty();
+    $.ajax({
+        type: "GET",
+        url: "/retailer/procategorywiseproduct/" + id + "?page=" + page,
+        headers: {
+            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+        },
+        data: {
+            selectedprocategory: selectedprocategory,
+            project_id: project_id,
+            purity: purity,
+            productArray: productArray,
+            _token: $('meta[name="csrf-token"]').attr("content"),
+        },
+        dataType: "json",
+        success: function (result) {
+            // Check if any checkbox is checked
+            let isAnyCheckboxChecked = $(".procategory:checked").length > 0;
+            // Assign value to #subCollectionData based on the checkbox state
+            if (isAnyCheckboxChecked) {
+                $("#purityFilter").val(JSON.stringify(result.purityjson));
+            } else {
+                $("#purityFilter").val(
+                    JSON.stringify(result.purityDefaultjson)
+                );
+            }
+            if (result.procategorywiseproduct.data.length == 0) {
+                $("#checkboxhidden").attr("hidden", "");
+                $("#addtocarthidden").attr("hidden", "");
+                $("#product_page").attr("hidden", "");
+                $("#notfound").empty();
+                var notfound = `<img src='${baseurl}/emptycart.gif'>`;
+                $("#notfound").append(notfound);
+                if (windowWidth > 300) {
+                    $("#pageloader").fadeOut();
+                }
+            } else {
+                $("#checkboxhidden").removeAttr("hidden", "");
+                $("#addtocarthidden").removeAttr("hidden", "");
+                $("#product_page").removeAttr("hidden", "");
+                $.each(
+                    result.procategorywiseproduct.data,
+                    function (key, value) {
+                        $("#notfound").empty(); // Clear 'no results' notice if any
+                        let encryptedId = $("#encrypt" + value.id).val();
+                        let productDetailUrl =
+                            "/retailer/productdetail/" + encryptedId;
+                        let secureImg = value.secureFilename;
+                        let variantCount = value.variant_count ?? 1;
+                        let variants = value.variants ?? [];
+
+                        let safeDesignNo = value.DesignNo.toLowerCase()
+                            .replace(/[^a-z0-9]+/g, "-")
+                            .replace(/^-+|-+$/g, "");
+                        let productHTML = `
+                        <input type="hidden" name="weight${
+                            value.id
+                        }" id="weight${value.id}"
+                                value="${value.weight ?? ""}">
+                            <input type="hidden" name="size${
+                                value.id
+                            }" id="size${value.id}"
+                                value="${value.size ?? ""}">
+                            <input type="hidden" name="box${value.id}" id="box${
+                            value.id
+                        }"
+                                value="${value.style ?? ""}">
+                    <div class="card shop-page_product-card">
+                        <div class="card-img-top d-flex align-items-center justify-content-center position-relative">
+                            <a href="${productDetailUrl}">
+                                <img class="img-fluid prouduct_card-image load-secure-image" src="${baseurl}/load-loading.gif" data-secure="${secureImg}" width="255" height="255" alt="">
+                            </a>
+                            <div class="position-absolute card-purity purity-list">Purity: ${
+                                value.variant_purity ?? "N/A"
+                            }</div>
+                        </div>
+                
+                        <div class="card-body d-flex flex-column">
+                            <div class="card-title">
+                                <a href="${productDetailUrl}" class="text-decoration-none">${
+                            value.DesignNo
+                        }</a>
+                            </div>`;
+
+                        // MULTIPLE VARIANTS
+                        if (variantCount > 1 && variants.length > 1) {
+                            productHTML += `
+                        <div class="mt-3">
+                            <div class="card-text fw-bold">Multiple Sizes Available</div>
+                            <button class="btn btn-warning mt-2" data-bs-toggle="modal" data-bs-target="#productModal-${safeDesignNo}">
+                                View All Options
+                            </button>
+                
+                            <!-- Modal -->
+                            <div class="modal fade product-variants-modal" id="productModal-${safeDesignNo}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered modal-xl">
+                                    <div class="modal-content rounded-4 overflow-hidden">
+                                        <div class="modal-body p-4 d-flex flex-column flex-lg-row gap-4">
+                                            <div class="modal-image text-center flex-shrink-0" style="flex: 0 0 200px;">
+                                                <img class="img-fluid load-secure-image" src="${baseurl}/load-loading.gif" data-secure="${secureImg}" width="200" height="200" alt="${value.DesignNo}">
+                                            </div>
+                                            <div class="modal-details flex-grow-1 overflow-auto">
+                                                <h6 class="mb-2 fs-5" style="color:#7E7E7E;">Design Code: <span class="font-semibold text-dark">${value.DesignNo}</span></h6>
+                                                <p class="fw-medium fs-6 mb-4" style="color:#F78D1E;">Multiple Sizes Available</p>
+                                                <div class="overflow-auto">
+                                                    <table class="table table-bordered text-center align-middle">
+                                                        <thead class="table-dark border-0"><tr><th></th>`;
+
+                            variants.forEach((_, i) => {
+                                productHTML += `<th>Variant #${i + 1}</th>`;
+                            });
+
+                            productHTML += `</tr></thead><tbody>`;
+
+                            // Dynamic rows for variant attributes
+                            const attrs = [
+                                "Purity",
+                                "color",
+                                "unit",
+                                "style",
+                                "making",
+                                "size",
+                                "weight",
+                                "qty",
+                            ];
+                            const labels = [
+                                "Purity",
+                                "Color",
+                                "Unit",
+                                "Style",
+                                "Making %",
+                                "Size",
+                                "Weight",
+                                "In Stock",
+                            ];
+
+                            attrs.forEach((attr, i) => {
+                                productHTML += `<tr><td>${labels[i]}</td>`;
+                                variants.forEach((variant) => {
+                                    let val = variant[attr] ?? "-";
+                                    if (attr === "Weight" && val !== "-")
+                                        val += "g";
+                                    if (attr === "Qty" && val !== "-")
+                                        val += " Pcs";
+                                    productHTML += `<td>${val}</td>`;
+                                });
+                                productHTML += `</tr>`;
+                            });
+
+                            // Quantity input row
+                            productHTML += `<tr><td>Qty</td>`;
+                            variants.forEach((variant) => {
+                                productHTML += `<td>
+                                <input type="hidden"
+                                    name="mweight${variant.productID}"
+                                    id="mweight${variant.productID}"
+                                    value="${variant.weight ?? ""}">
+                                <input type="hidden"
+                                    name="msize${variant.productID}"
+                                    id="msize${variant.productID}"
+                                    value="${variant.size ?? ""}">
+                                <input type="hidden"
+                                    name="mbox${variant.productID}"
+                                    id="mbox${variant.productID}"
+                                    value="${variant.style ?? ""}">
+                                <div class="input-group quantity-input-group quantity-container">
+                                    <input type="button" value="-" class="qtyminus" field="quantity">
+                                    <input type="text" name="mquantity${
+                                        variant.productID
+                                    }" id="mquantity${
+                                    variant.productID
+                                }" value="1" class="qty">
+                                    <input type="button" value="+" class="qtyplus" field="quantity">
+                                </div>
+                            </td>`;
+                            });
+                            productHTML += `</tr>`;
+
+                            // Add to cart row
+                            productHTML += `<tr><td>Add to Cart</td>`;
+                            variants.forEach((variant) => {
+                                let inCart =
+                                    result.cart[variant.productID]?.length > 0;
+                                let cartQty =
+                                    result.cartcount[variant.productID] ?? 0;
+                                productHTML += `<td>
+                                <button onclick="addforcart(${
+                                    variant.productID
+                                })" class="btn ${
+                                    inCart
+                                        ? "added-to-cart-btn"
+                                        : "add-to-cart-btn"
+                                } spinner-button" data_id="card_id_${
+                                    variant.productID
+                                }">
+                                    <span class="submit-text">${
+                                        inCart ? "ADDED TO CART" : "ADD TO CART"
+                                    }</span>
+                                    <span class="d-none spinner">
+                                        <span class="spinner-grow spinner-grow-sm" aria-hidden="true"></span>
+                                        <span role="status">Adding...</span>
+                                    </span>
+                                    <span id="applycurrentcartcount${
+                                        variant.productID
+                                    }" class="added-to-cart-badge ms-2">${cartQty}</span>
+                                </button>
+                            </td>`;
+                            });
+
+                            productHTML += `
+                            </tr></tbody></table>
+                        </div></div></div>
+                            <button type="button" class="btn btn-link close-btn" data-bs-dismiss="modal">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="25"
+                                                                height="25" viewBox="0 0 25 25" fill="none">
+                                                                <path
+                                                                    d="M12.375 23.75C10.8812 23.75 9.40205 23.4558 8.02198 22.8841C6.6419 22.3125 5.38793 21.4746 4.33166 20.4183C3.27539 19.3621 2.43752 18.1081 1.86587 16.728C1.29422 15.3479 1 13.8688 1 12.375C1 10.8812 1.29422 9.40205 1.86587 8.02197C2.43752 6.6419 3.27539 5.38793 4.33166 4.33166C5.38793 3.27539 6.6419 2.43752 8.02198 1.86587C9.40206 1.29422 10.8812 1 12.375 1C13.8688 1 15.3479 1.29422 16.728 1.86587C18.1081 2.43752 19.3621 3.2754 20.4183 4.33166C21.4746 5.38793 22.3125 6.6419 22.8841 8.02198C23.4558 9.40206 23.75 10.8812 23.75 12.375C23.75 13.8688 23.4558 15.3479 22.8841 16.728C22.3125 18.1081 21.4746 19.3621 20.4183 20.4183C19.3621 21.4746 18.1081 22.3125 16.728 22.8841C15.3479 23.4558 13.8688 23.75 12.375 23.75L12.375 23.75Z"
+                                                                    stroke="#535353" stroke-width="1.47967"
+                                                                    stroke-linecap="round" />
+                                                                <path d="M8.58203 8.58398L16.1654 16.1673"
+                                                                    stroke="#535353" stroke-width="1.47967"
+                                                                    stroke-linecap="round" />
+                                                                <path d="M16.168 8.58398L8.58464 16.1673"
+                                                                    stroke="#535353" stroke-width="1.47967"
+                                                                    stroke-linecap="round" />
+                                                            </svg></button>
+                        </div>
+                    </div>
+                </div>`;
+                        } else {
+                            // SINGLE VARIANT
+                            productHTML += `<div class="mt-3 grid cols-3 card-content_wrapper">`;
+
+                            const singleAttrs = [
+                                { key: "variant_unit", label: "Unit" },
+                                { key: "variant_style", label: "Style" },
+                                { key: "variant_making", label: "Making %" },
+                                { key: "variant_color", label: "Color" },
+                                { key: "variant_size", label: "Size" },
+                                {
+                                    key: "variant_weight",
+                                    label: "Weight",
+                                    suffix: "g",
+                                },
+                            ];
+
+                            singleAttrs.forEach((attr) => {
+                                if (value[attr.key]) {
+                                    productHTML += `
+                                <div class="d-flex flex-column gap-1">
+                                    <div class="card-text text-dark">${
+                                        attr.label
+                                    }</div>
+                                    <div class="product-card-badge">${
+                                        value[attr.key]
+                                    }${attr.suffix || ""}</div>
+                                </div>`;
+                                }
+                            });
+
+                            productHTML += `
+                             </div>
+                            <input type="hidden"
+        name="mweight${value.id}"
+        id="mweight${value.id}"
+        value="${value.variant_weight ?? ""}">
+    <input type="hidden"
+        name="msize${value.id}"
+        id="msize${value.id}"
+        value="${value.variant_size ?? ""}">
+    <input type="hidden"
+        name="mbox${value.id}"
+        id="mbox${value.id}"
+        value="${value.variant_style ?? ""}">
+                            <div class="product-cart-qty-text mt-2">In Stock: <span>${
+                                value.variant_qty ?? "-"
+                            }</span> Pcs</div>
+                            <div class="shop-page-add-to-cart-btn mt-3">
+                                <div class="d-flex align-items-center">
+                                    <label class="me-2">Qty</label>
+                                    <div class="input-group quantity-input-group quantity-container">
+                                        <input type="button" value="-" class="qtyminus" field="quantity">
+                                        <input type="text" name="quantity" id="quantity${
+                                            value.id
+                                        }" value="1" class="qty">
+                                        <input type="button" value="+" class="qtyplus" field="quantity">
+                                    </div>
+                                </div>
+                                <button onclick="addforcart(${
+                                    value.id
+                                })" class="btn mt-3 ${
+                                result.cart[value.id]?.length
+                                    ? "added-to-cart-btn"
+                                    : "add-to-cart-btn"
+                            } spinner-button" data_id="card_id_${value.id}">
+                                    <span class="submit-text">${
+                                        result.cart[value.id]?.length
+                                            ? "ADDED TO CART"
+                                            : "ADD TO CART"
+                                    }</span>
+                                    <span class="d-none spinner">
+                                        <span class="spinner-grow spinner-grow-sm" aria-hidden="true"></span>
+                                        <span role="status">Adding...</span>
+                                    </span>
+                                    <span class="added-to-cart-badge ms-2">${
+                                        result.cartcount[value.id] ?? ""
+                                    }</span>
+                                </button>
+                            </div>`;
+                        }
+
+                        productHTML += `</div></div>`; // Close .card-body and .card
+                        $("#product_page").append(productHTML);
+                    }
+                );
+
+                $(".loader").fadeOut();
+                if (windowWidth > 300) {
+                    $("#pageloader").fadeOut();
+                }
+                $("#pagination").empty();
+                // Append pagination links
+                var paginationHTML = `<div class="my-5 pagination-links">
+                <nav class="large-devices_pagination" style="padding-bottom: 100px;">
+                    <div class="d-flex gap-3 flex-wrap justify-content-between">
+                        <div>
+                             Showing ${result.procategorywiseproduct.from} - ${result.procategorywiseproduct.to} of ${result.procategorywiseproduct.total} results
+                         </div>
+                         <ul class="pagination">`;
+
+                if (result.procategorywiseproduct.current_page == 1) {
+                    paginationHTML += `<li class="page-item disabled">
+                     <span class="page-link">Previous</span>
+                 </li>`;
+                } else {
+                    paginationHTML += `<li class="page-item">
+                     <a class="page-link" href="javascript:void(0)" onclick="getProCategory(${id},${
+                        result.procategorywiseproduct.current_page - 1
+                    })" tabindex="-1">Previous</a>
+                 </li>`;
+                }
+
+                for (
+                    var page = Math.max(
+                        1,
+                        result.procategorywiseproduct.current_page - 2
+                    );
+                    page <=
+                    Math.min(
+                        result.procategorywiseproduct.last_page,
+                        result.procategorywiseproduct.current_page + 2
+                    );
+                    page++
+                ) {
+                    if (page == result.procategorywiseproduct.current_page) {
+                        paginationHTML += `<li class="page-item active">
+                         <span class="page-link">${page}</span>
+                     </li>`;
+                    } else {
+                        paginationHTML += `<li class="page-item">
+                         <a class="page-link"  href="javascript:void(0)" onclick="getProCategory(${id},${page})">${page}</a>
+                     </li>`;
+                    }
+                }
+
+                if (
+                    result.procategorywiseproduct.current_page ==
+                    result.procategorywiseproduct.last_page
+                ) {
+                    paginationHTML += `<li class="page-item disabled">
+                     <span class="page-link">Next</span>
+                 </li>`;
+                } else {
+                    paginationHTML += `<li class="page-item">
+                     <a class="page-link"  href="javascript:void(0)" onclick="getProCategory(${id},${
+                        result.procategorywiseproduct.current_page + 1
+                    })">Next</a>
+                 </li>`;
+                }
+
+                paginationHTML += `</ul></div></nav>
+                <nav class="small-devices_pagination d-none">
+                    <div class="text-center">
+                        <a class="btn btn-dark px-4 py-2" href="javascript:void(0)" onclick="getProCategory(${id},${
+                    result.procategorywiseproduct.current_page + 1
+                })">See More
+                            Products</a>
+                    </div>
+                </nav></div>`;
+
+                $("#pagination").append(paginationHTML);
+            }
+            qtyplusminus();
+            $(".card-checkbox").click(function () {
+                if ($(this).is(":checked")) {
+                    $("#addalltocart").removeAttr("disabled");
+                } else {
+                    $("#addalltocart").attr("disabled", "disabled");
+                }
+            });
+
+            // Add click event listener to wishlist-svg buttons
+            const wishlistButtons = document.querySelectorAll(".wishlist-svg");
+
+            wishlistButtons.forEach((button) => {
+                button.addEventListener("click", function () {
+                    // Toggle the 'active' class to change the color on click
+                    this.classList.toggle("active");
+                });
+            });
+
+            if (isAnyCheckboxChecked) {
+                updatePurityFilters(result.purityjson);
+                updateMobilePurityFilters(result.purityjson);
+            } else {
+                updatePurityFilters(result.purityDefaultjson);
+                updateMobilePurityFilters(result.purityDefaultjson);
+            }
+            loadSecureImages();
+        },
+    });
+}
+
+function getPurity(id, page = 1) {
+    $(".pagination-links").attr("hidden", true);
+    var project_id = $("#decryptedProjectId").val();
+    var productArray = $("#product").val();
+    var procategory = $("#procategory").val();
+
+    var selectedpurity = [];
+    $(".purity").each(function () {
+        if (windowWidth > 300) {
+            $("#pageloader").fadeIn();
+        }
+
+        let val = $(this).val();
+        if ($(this).is(":checked")) {
+            if (!selectedpurity.includes(val)) {
+                selectedpurity.push(val);
+            }
+        } else {
+            // remove from array if unchecked
+            selectedpurity = selectedpurity.filter((item) => item !== val);
+        }
+    });
+    // Set the value of the hidden input field to the serialized string
+    $("#purity").val(selectedpurity);
+
+    $("#product_page").empty();
+    $.ajax({
+        type: "GET",
+        url: "/retailer/puritywiseproduct/" + id + "?page=" + page,
+        headers: {
+            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+        },
+        data: {
+            selectedpurity: selectedpurity,
+            project_id: project_id,
+            procategory: procategory,
+            productArray: productArray,
+            _token: $('meta[name="csrf-token"]').attr("content"),
+        },
+        dataType: "json",
+        success: function (result) {
+            // Check if any checkbox is checked
+            let isAnyCheckboxChecked = $(".purity:checked").length > 0;
+            // Assign value to #subCollectionData based on the checkbox state
+            if (isAnyCheckboxChecked) {
+                $("#procategoryFilter").val(
+                    JSON.stringify(result.procategoryjson)
+                );
+            } else {
+                $("#procategoryFilter").val(
+                    JSON.stringify(result.procategoryDefaultjson)
+                );
+            }
+            if (result.puritywiseproduct.data.length == 0) {
+                $("#checkboxhidden").attr("hidden", "");
+                $("#addtocarthidden").attr("hidden", "");
+                $("#product_page").attr("hidden", "");
+                $("#notfound").empty();
+                var notfound = `<img src='${baseurl}/emptycart.gif'>`;
+                $("#notfound").append(notfound);
+                if (windowWidth > 300) {
+                    $("#pageloader").fadeOut();
+                }
+            } else {
+                $("#checkboxhidden").removeAttr("hidden", "");
+                $("#addtocarthidden").removeAttr("hidden", "");
+                $("#product_page").removeAttr("hidden", "");
+                $.each(result.puritywiseproduct.data, function (key, value) {
+                    $("#notfound").empty(); // Clear 'no results' notice if any
+                    let encryptedId = $("#encrypt" + value.id).val();
+                    let productDetailUrl =
+                        "/retailer/productdetail/" + encryptedId;
+                    let secureImg = value.secureFilename;
+                    let variantCount = value.variant_count ?? 1;
+                    let variants = value.variants ?? [];
+
+                    let safeDesignNo = value.DesignNo.toLowerCase()
+                        .replace(/[^a-z0-9]+/g, "-")
+                        .replace(/^-+|-+$/g, "");
+                    let productHTML = `
+                    <input type="hidden" name="weight${value.id}" id="weight${
+                        value.id
+                    }"
+                                value="${value.weight ?? ""}">
+                            <input type="hidden" name="size${
+                                value.id
+                            }" id="size${value.id}"
+                                value="${value.size ?? ""}">
+                            <input type="hidden" name="box${value.id}" id="box${
+                        value.id
+                    }"
+                                value="${value.style ?? ""}">
+                    <div class="card shop-page_product-card">
+                        <div class="card-img-top d-flex align-items-center justify-content-center position-relative">
+                            <a href="${productDetailUrl}">
+                                <img class="img-fluid prouduct_card-image load-secure-image" src="${baseurl}/load-loading.gif" data-secure="${secureImg}" width="255" height="255" alt="">
+                            </a>
+                            <div class="position-absolute card-purity purity-list">Purity: ${
+                                value.variant_purity ?? "N/A"
+                            }</div>
+                        </div>
+                
+                        <div class="card-body d-flex flex-column">
+                            <div class="card-title">
+                                <a href="${productDetailUrl}" class="text-decoration-none">${
+                        value.DesignNo
+                    }</a>
+                            </div>`;
+
+                    // MULTIPLE VARIANTS
+                    if (variantCount > 1 && variants.length > 1) {
+                        productHTML += `
+                        <div class="mt-3">
+                            <div class="card-text fw-bold">Multiple Sizes Available</div>
+                            <button class="btn btn-warning mt-2" data-bs-toggle="modal" data-bs-target="#productModal-${safeDesignNo}">
+                                View All Options
+                            </button>
+                
+                            <!-- Modal -->
+                            <div class="modal fade product-variants-modal" id="productModal-${safeDesignNo}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered modal-xl">
+                                    <div class="modal-content rounded-4 overflow-hidden">
+                                        <div class="modal-body p-4 d-flex flex-column flex-lg-row gap-4">
+                                            <div class="modal-image text-center flex-shrink-0" style="flex: 0 0 200px;">
+                                                <img class="img-fluid load-secure-image" src="${baseurl}/load-loading.gif" data-secure="${secureImg}" width="200" height="200" alt="${value.DesignNo}">
+                                            </div>
+                                            <div class="modal-details flex-grow-1 overflow-auto">
+                                                <h6 class="mb-2 fs-5" style="color:#7E7E7E;">Design Code: <span class="font-semibold text-dark">${value.DesignNo}</span></h6>
+                                                <p class="fw-medium fs-6 mb-4" style="color:#F78D1E;">Multiple Sizes Available</p>
+                                                <div class="overflow-auto">
+                                                    <table class="table table-bordered text-center align-middle">
+                                                        <thead class="table-dark border-0"><tr><th></th>`;
+
+                        variants.forEach((_, i) => {
+                            productHTML += `<th>Variant #${i + 1}</th>`;
+                        });
+
+                        productHTML += `</tr></thead><tbody>`;
+
+                        // Dynamic rows for variant attributes
+                        const attrs = [
+                            "Purity",
+                            "color",
+                            "unit",
+                            "style",
+                            "making",
+                            "size",
+                            "weight",
+                            "qty",
+                        ];
+                        const labels = [
+                            "Purity",
+                            "Color",
+                            "Unit",
+                            "Style",
+                            "Making %",
+                            "Size",
+                            "Weight",
+                            "In Stock",
+                        ];
+
+                        attrs.forEach((attr, i) => {
+                            productHTML += `<tr><td>${labels[i]}</td>`;
+                            variants.forEach((variant) => {
+                                let val = variant[attr] ?? "-";
+                                if (attr === "Weight" && val !== "-")
+                                    val += "g";
+                                if (attr === "Qty" && val !== "-")
+                                    val += " Pcs";
+                                productHTML += `<td>${val}</td>`;
+                            });
+                            productHTML += `</tr>`;
+                        });
+
+                        // Quantity input row
+                        productHTML += `<tr><td>Qty</td>`;
+                        variants.forEach((variant) => {
+                            productHTML += `<td>
+                            <input type="hidden"
+                                    name="mweight${variant.productID}"
+                                    id="mweight${variant.productID}"
+                                    value="${variant.weight ?? ""}">
+                                <input type="hidden"
+                                    name="msize${variant.productID}"
+                                    id="msize${variant.productID}"
+                                    value="${variant.size ?? ""}">
+                                <input type="hidden"
+                                    name="mbox${variant.productID}"
+                                    id="mbox${variant.productID}"
+                                    value="${variant.style ?? ""}">
+                                <div class="input-group quantity-input-group quantity-container">
+                                    <input type="button" value="-" class="qtyminus" field="quantity">
+                                    <input type="text" name="mquantity${
+                                        variant.productID
+                                    }" id="mquantity${
+                                variant.productID
+                            }" value="1" class="qty">
+                                    <input type="button" value="+" class="qtyplus" field="quantity">
+                                </div>
+                            </td>`;
+                        });
+                        productHTML += `</tr>`;
+
+                        // Add to cart row
+                        productHTML += `<tr><td>Add to Cart</td>`;
+                        variants.forEach((variant) => {
+                            let inCart =
+                                result.cart[variant.productID]?.length > 0;
+                            let cartQty =
+                                result.cartcount[variant.productID] ?? 0;
+                            productHTML += `<td>
+                                <button onclick="addforcart(${
+                                    variant.productID
+                                })" class="btn ${
+                                inCart ? "added-to-cart-btn" : "add-to-cart-btn"
+                            } spinner-button" data_id="card_id_${
+                                variant.productID
+                            }">
+                                    <span class="submit-text">${
+                                        inCart ? "ADDED TO CART" : "ADD TO CART"
+                                    }</span>
+                                    <span class="d-none spinner">
+                                        <span class="spinner-grow spinner-grow-sm" aria-hidden="true"></span>
+                                        <span role="status">Adding...</span>
+                                    </span>
+                                    <span id="applycurrentcartcount${
+                                        variant.productID
+                                    }" class="added-to-cart-badge ms-2">${cartQty}</span>
+                                </button>
+                            </td>`;
+                        });
+
+                        productHTML += `
+                            </tr></tbody></table>
+                        </div></div></div>
+                            <button type="button" class="btn btn-link close-btn" data-bs-dismiss="modal">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="25"
+                                                                height="25" viewBox="0 0 25 25" fill="none">
+                                                                <path
+                                                                    d="M12.375 23.75C10.8812 23.75 9.40205 23.4558 8.02198 22.8841C6.6419 22.3125 5.38793 21.4746 4.33166 20.4183C3.27539 19.3621 2.43752 18.1081 1.86587 16.728C1.29422 15.3479 1 13.8688 1 12.375C1 10.8812 1.29422 9.40205 1.86587 8.02197C2.43752 6.6419 3.27539 5.38793 4.33166 4.33166C5.38793 3.27539 6.6419 2.43752 8.02198 1.86587C9.40206 1.29422 10.8812 1 12.375 1C13.8688 1 15.3479 1.29422 16.728 1.86587C18.1081 2.43752 19.3621 3.2754 20.4183 4.33166C21.4746 5.38793 22.3125 6.6419 22.8841 8.02198C23.4558 9.40206 23.75 10.8812 23.75 12.375C23.75 13.8688 23.4558 15.3479 22.8841 16.728C22.3125 18.1081 21.4746 19.3621 20.4183 20.4183C19.3621 21.4746 18.1081 22.3125 16.728 22.8841C15.3479 23.4558 13.8688 23.75 12.375 23.75L12.375 23.75Z"
+                                                                    stroke="#535353" stroke-width="1.47967"
+                                                                    stroke-linecap="round" />
+                                                                <path d="M8.58203 8.58398L16.1654 16.1673"
+                                                                    stroke="#535353" stroke-width="1.47967"
+                                                                    stroke-linecap="round" />
+                                                                <path d="M16.168 8.58398L8.58464 16.1673"
+                                                                    stroke="#535353" stroke-width="1.47967"
+                                                                    stroke-linecap="round" />
+                                                            </svg></button>
+                        </div>
+                    </div>
+                </div>`;
+                    } else {
+                        // SINGLE VARIANT
+                        productHTML += `<div class="mt-3 grid cols-3 card-content_wrapper">`;
+
+                        const singleAttrs = [
+                            { key: "variant_unit", label: "Unit" },
+                            { key: "variant_style", label: "Style" },
+                            { key: "variant_making", label: "Making %" },
+                            { key: "variant_color", label: "Color" },
+                            { key: "variant_size", label: "Size" },
+                            {
+                                key: "variant_weight",
+                                label: "Weight",
+                                suffix: "g",
+                            },
+                        ];
+
+                        singleAttrs.forEach((attr) => {
+                            if (value[attr.key]) {
+                                productHTML += `
+                                <div class="d-flex flex-column gap-1">
+                                    <div class="card-text text-dark">${
+                                        attr.label
+                                    }</div>
+                                    <div class="product-card-badge">${
+                                        value[attr.key]
+                                    }${attr.suffix || ""}</div>
+                                </div>`;
+                            }
+                        });
+
+                        productHTML += `
+                         </div>
+                        <input type="hidden"
+        name="mweight${value.id}"
+        id="mweight${value.id}"
+        value="${value.variant_weight ?? ""}">
+    <input type="hidden"
+        name="msize${value.id}"
+        id="msize${value.id}"
+        value="${value.variant_size ?? ""}">
+    <input type="hidden"
+        name="mbox${value.id}"
+        id="mbox${value.id}"
+        value="${value.variant_style ?? ""}">
+                            <div class="product-cart-qty-text mt-2">In Stock: <span>${
+                                value.variant_qty ?? "-"
+                            }</span> Pcs</div>
+                            <div class="shop-page-add-to-cart-btn mt-3">
+                                <div class="d-flex align-items-center">
+                                    <label class="me-2">Qty</label>
+                                    <div class="input-group quantity-input-group quantity-container">
+                                        <input type="button" value="-" class="qtyminus" field="quantity">
+                                        <input type="text" name="quantity" id="quantity${
+                                            value.id
+                                        }" value="1" class="qty">
+                                        <input type="button" value="+" class="qtyplus" field="quantity">
+                                    </div>
+                                </div>
+                                <button onclick="addforcart(${
+                                    value.id
+                                })" class="btn mt-3 ${
+                            result.cart[value.id]?.length
+                                ? "added-to-cart-btn"
+                                : "add-to-cart-btn"
+                        } spinner-button" data_id="card_id_${value.id}">
+                                    <span class="submit-text">${
+                                        result.cart[value.id]?.length
+                                            ? "ADDED TO CART"
+                                            : "ADD TO CART"
+                                    }</span>
+                                    <span class="d-none spinner">
+                                        <span class="spinner-grow spinner-grow-sm" aria-hidden="true"></span>
+                                        <span role="status">Adding...</span>
+                                    </span>
+                                    <span class="added-to-cart-badge ms-2">${
+                                        result.cartcount[value.id] ?? ""
+                                    }</span>
+                                </button>
+                            </div>`;
+                    }
+
+                    productHTML += `</div></div>`; // Close .card-body and .card
+                    $("#product_page").append(productHTML);
+                });
+
+                $(".loader").fadeOut();
+                if (windowWidth > 300) {
+                    $("#pageloader").fadeOut();
+                }
+                $("#pagination").empty();
+                // Append pagination links
+                var paginationHTML = `<div class="my-5 pagination-links">
+                <nav class="large-devices_pagination" style="padding-bottom: 100px;">
+                    <div class="d-flex gap-3 flex-wrap justify-content-between">
+                        <div>
+                             Showing ${result.puritywiseproduct.from} - ${result.puritywiseproduct.to} of ${result.puritywiseproduct.total} results
+                         </div>
+                         <ul class="pagination">`;
+
+                if (result.puritywiseproduct.current_page == 1) {
+                    paginationHTML += `<li class="page-item disabled">
+                     <span class="page-link">Previous</span>
+                 </li>`;
+                } else {
+                    paginationHTML += `<li class="page-item">
+                     <a class="page-link" href="javascript:void(0)" onclick="getPurity(${id},${
+                        result.puritywiseproduct.current_page - 1
+                    })" tabindex="-1">Previous</a>
+                 </li>`;
+                }
+
+                for (
+                    var page = Math.max(
+                        1,
+                        result.puritywiseproduct.current_page - 2
+                    );
+                    page <=
+                    Math.min(
+                        result.puritywiseproduct.last_page,
+                        result.puritywiseproduct.current_page + 2
+                    );
+                    page++
+                ) {
+                    if (page == result.puritywiseproduct.current_page) {
+                        paginationHTML += `<li class="page-item active">
+                         <span class="page-link">${page}</span>
+                     </li>`;
+                    } else {
+                        paginationHTML += `<li class="page-item">
+                         <a class="page-link"  href="javascript:void(0)" onclick="getPurity(${id},${page})">${page}</a>
+                     </li>`;
+                    }
+                }
+
+                if (
+                    result.puritywiseproduct.current_page ==
+                    result.puritywiseproduct.last_page
+                ) {
+                    paginationHTML += `<li class="page-item disabled">
+                     <span class="page-link">Next</span>
+                 </li>`;
+                } else {
+                    paginationHTML += `<li class="page-item">
+                     <a class="page-link"  href="javascript:void(0)" onclick="getPurity(${id},${
+                        result.puritywiseproduct.current_page + 1
+                    })">Next</a>
+                 </li>`;
+                }
+
+                paginationHTML += `</ul></div></nav>
+                <nav class="small-devices_pagination d-none">
+                    <div class="text-center">
+                        <a class="btn btn-dark px-4 py-2" href="javascript:void(0)" onclick="getPurity(${id},${
+                    result.puritywiseproduct.current_page + 1
+                })">See More
+                            Products</a>
+                    </div>
+                </nav></div>`;
+
+                $("#pagination").append(paginationHTML);
+            }
+            qtyplusminus();
+            $(".card-checkbox").click(function () {
+                if ($(this).is(":checked")) {
+                    $("#addalltocart").removeAttr("disabled");
+                } else {
+                    $("#addalltocart").attr("disabled", "disabled");
+                }
+            });
+
+            // Add click event listener to wishlist-svg buttons
+            const wishlistButtons = document.querySelectorAll(".wishlist-svg");
+
+            wishlistButtons.forEach((button) => {
+                button.addEventListener("click", function () {
+                    // Toggle the 'active' class to change the color on click
+                    this.classList.toggle("active");
+                });
+            });
+
+            if (isAnyCheckboxChecked) {
+                updateProCategoryFilters(result.procategoryjson);
+                updateMobileProCategoryFilters(result.procategoryjson);
+            } else {
+                updateProCategoryFilters(result.procategoryDefaultjson);
+                updateMobileProCategoryFilters(result.procategoryDefaultjson);
+            }
+            loadSecureImages();
+        },
+    });
+}
+
+function updateProductFilters(productsData) {
+    let products = JSON.parse(productsData);
+    let container = document.getElementById("product-filter");
+    if (container) {
+        container.innerHTML = ""; // Clear existing filters if any
+        products.forEach(function (product) {
+            var filterHtml = `
+    <div class="form-check">
+    
+    <input class="product form-check-input" type="checkbox"
+    id="product${product.id}" name="product" data-id="${product.id}"
+    value="${product.Item}" onclick="getProduct(${product.id})">
+    <label class="form-check-label">
+    ${product.Item}
+    </label>
+    
+        </div>
+        `;
+            container.insertAdjacentHTML("beforeend", filterHtml);
+        });
+    }
+}
+
+function updateMobileProductFilters(productsData) {
+    let products = JSON.parse(productsData);
+
+    let container = document.getElementById("mobile-product-filters");
+    container.innerHTML = ""; // Clear existing filters if any
+
+    products.forEach(function (product) {
+        let filterHtml = `
+        <div class="form-check d-flex justify-content-between gap-2">
+            <div>
+                <input class="product form-check-input" type="checkbox"
+                    id="product${product.id}-mob" name="product" data-id="${product.id}"
+                    value="${product.Item}" onclick="getproductProduct(${product.id})">
+                <label class="form-check-label">
+                    ${product.Item}
+                </label>
+            </div>
+        </div>
+    `;
+        container.insertAdjacentHTML("beforeend", filterHtml);
+    });
+}
+
+function updateProCategoryFilters(procategorysData) {
+    let procategorys = JSON.parse(procategorysData);
+    let container = document.getElementById("procategory-filters-container");
+
+    // Get previously selected values (from hidden input OR localStorage)
+    let previouslySelected = ($("#procategory").val() || "").split(",");
+    // Or use localStorage for persistence:
+    // let previouslySelected = JSON.parse(localStorage.getItem("selectedProCats") || "[]");
+
+    if (container) {
+        container.innerHTML = ""; // Clear existing filters if any
+
+        // ✅ Sort so checked ones come first
+        procategorys.sort((a, b) => {
+            let aChecked = previouslySelected.includes(a.Procatgory);
+            let bChecked = previouslySelected.includes(b.Procatgory);
+            return aChecked === bChecked ? 0 : aChecked ? -1 : 1;
+        });
+
+        procategorys.forEach(function (procat) {
+            let isChecked = previouslySelected.includes(procat.Procatgory);
+
+            let filterHtml = `
+                <div class="form-check d-flex align-items-center gap-2">
+                    <input class="procategory form-check-input" type="checkbox"
+                        id="procategory${procat.id}" 
+                        name="procategory" 
+                        data-id="${procat.id}"
+                        value="${procat.Procatgory}" 
+                        onclick="getProCategory(${procat.id})"
+                        ${isChecked ? "checked" : ""}>
+                    <label class="form-check-label">
+                        ${procat.Procatgory}
+                    </label>
+                </div>
+            `;
+            container.insertAdjacentHTML("beforeend", filterHtml);
+        });
+    }
+
+    // Save checked categories whenever user selects
+    $(".procategory").on("change", function () {
+        let selected = $(".procategory:checked")
+            .map(function () {
+                return $(this).val();
+            })
+            .get();
+
+        // $("#procategory").val(selected.join(","));
+        localStorage.setItem("selectedProCats", JSON.stringify(selected));
+    });
+}
+
+function updateMobileProCategoryFilters(procategorysData) {
+    let procategorys = JSON.parse(procategorysData);
+    let container = document.getElementById("mobile-procategory-filters");
+
+    // Get previously selected values (from hidden input OR localStorage)
+    let previouslySelected = ($("#procategory").val() || "").split(",");
+    // Or use localStorage directly:
+    // let previouslySelected = JSON.parse(localStorage.getItem("selectedProCats") || "[]");
+
+    if (container) {
+        container.innerHTML = ""; // Clear existing filters if any
+
+        // ✅ Sort so checked ones come first
+        procategorys.sort((a, b) => {
+            let aChecked = previouslySelected.includes(a.Procatgory);
+            let bChecked = previouslySelected.includes(b.Procatgory);
+            return aChecked === bChecked ? 0 : aChecked ? -1 : 1;
+        });
+
+        procategorys.forEach(function (procat) {
+            let isChecked = previouslySelected.includes(procat.Procatgory);
+
+            let filterHtml = `
+                <div class="form-check d-flex align-items-center gap-2">
+                    <input class="procategory form-check-input" type="checkbox"
+                        id="procategory${procat.id}-mob" 
+                        name="procategory" 
+                        data-id="${procat.id}"
+                        value="${procat.Procatgory}" 
+                        onclick="getProCategory(${procat.id})"
+                        ${isChecked ? "checked" : ""}>
+                    <label class="form-check-label">
+                        ${procat.Procatgory}
+                    </label>
+                </div>
+            `;
+            container.insertAdjacentHTML("beforeend", filterHtml);
+        });
+    }
+
+    // Save checked categories to hidden input & localStorage
+    $(".procategory").on("change", function () {
+        let selected = $(".procategory:checked")
+            .map(function () {
+                return $(this).val();
+            })
+            .get();
+
+        // $("#procategory").val(selected.join(","));
+        localStorage.setItem("selectedProCats", JSON.stringify(selected));
+    });
+}
+
+function updatePurityFilters(purityData) {
+    let purities = JSON.parse(purityData);
+    let container = document.getElementById("purity-filters-container");
+
+    // Get previously selected values (from hidden input OR localStorage)
+    let previouslySelected = ($("#purity").val() || "").split(",");
+    // Or use localStorage for persistence:
+    // let previouslySelected = JSON.parse(localStorage.getItem("selectedPurities") || "[]");
+
+    if (container) {
+        container.innerHTML = ""; // Clear existing filters if any
+
+        // ✅ Sort so checked ones come first
+        purities.sort((a, b) => {
+            let aChecked = previouslySelected.includes(a.Purity);
+            let bChecked = previouslySelected.includes(b.Purity);
+            return aChecked === bChecked ? 0 : aChecked ? -1 : 1;
+        });
+
+        purities.forEach(function (pure) {
+            let isChecked = previouslySelected.includes(pure.Purity);
+
+            let filterHtml = `
+                <div class="form-check d-flex align-items-center gap-2">
+                    <input class="purity form-check-input" type="checkbox"
+                        id="purity${pure.id}" 
+                        name="purity" 
+                        data-id="${pure.id}"
+                        value="${pure.Purity}" 
+                        onclick="getPurity(${pure.id})"
+                        ${isChecked ? "checked" : ""}>
+                    <label class="form-check-label" for="purity${pure.id}">
+                        ${pure.Purity}
+                    </label>
+                </div>
+            `;
+            container.insertAdjacentHTML("beforeend", filterHtml);
+        });
+    }
+
+    // Save checked purities whenever user selects
+    $(".purity").on("change", function () {
+        let selected = $(".purity:checked")
+            .map(function () {
+                return $(this).val();
+            })
+            .get();
+
+        $("#purity").val(selected.join(","));
+        localStorage.setItem("selectedPurities", JSON.stringify(selected));
+    });
+}
+
+function updateMobilePurityFilters(purityData) {
+    let purities = JSON.parse(purityData);
+    let container = document.getElementById("mobile-purity-filters");
+
+    // Get previously selected values (from hidden input OR localStorage)
+    let previouslySelected = ($("#purity").val() || "").split(",");
+    // Or use localStorage directly:
+    // let previouslySelected = JSON.parse(localStorage.getItem("selectedPurities") || "[]");
+
+    if (container) {
+        container.innerHTML = ""; // Clear existing filters if any
+
+        // ✅ Sort so checked ones come first
+        purities.sort((a, b) => {
+            let aChecked = previouslySelected.includes(a.Purity);
+            let bChecked = previouslySelected.includes(b.Purity);
+            return aChecked === bChecked ? 0 : aChecked ? -1 : 1;
+        });
+
+        purities.forEach(function (pure) {
+            let isChecked = previouslySelected.includes(pure.Purity);
+
+            let filterHtml = `
+                <div class="form-check d-flex align-items-center gap-2">
+                    <input class="purity form-check-input" type="checkbox"
+                        id="purity${pure.id}-mob" 
+                        name="purity" 
+                        data-id="${pure.id}"
+                        value="${pure.Purity}" 
+                        onclick="getPurity(${pure.id})"
+                        ${isChecked ? "checked" : ""}>
+                    <label class="form-check-label" for="purity${pure.id}-mob">
+                        ${pure.Purity}
+                    </label>
+                </div>
+            `;
+            container.insertAdjacentHTML("beforeend", filterHtml);
+        });
+    }
+
+    // Save checked purities to hidden input & localStorage
+    $(".purity").on("change", function () {
+        let selected = $(".purity:checked")
+            .map(function () {
+                return $(this).val();
+            })
+            .get();
+
+        $("#purity").val(selected.join(","));
+        localStorage.setItem("selectedPurities", JSON.stringify(selected));
+    });
+}
+
+function clearFilters() {
+    $("input[type='checkbox']").prop("checked", false);
+    window.location.reload();
+}
+
+function appendProductFilters() {
+    let products = JSON.parse($("#productFilter").val());
+
+    let container = document.getElementById("product-filter");
+    if (container) {
+        container.innerHTML = ""; // Clear existing filters if any
+
+        products.forEach(function (product) {
+            // Remove "SIL-" prefix if present
+            let productabel = product.Item;
+
+            var filterHtml = `
+        <div class="form-check">
+  
+                <input class="product form-check-input" type="checkbox"
+                    id="product${product.id}" name="product" data-id="${product.id}"
+                    value="${productabel}" onclick="getProduct(${product.id})">
+                <label class="form-check-label">
+                    ${productabel}
+                </label>
+ 
+        </div>
+    `;
+            container.insertAdjacentHTML("beforeend", filterHtml);
+        });
+    }
+}
+
+function appendProCategoryFilters() {
+    let procategorys = JSON.parse($("#procategoryFilter").val());
+
+    let container = document.getElementById("procategory-filters-container");
+    if (container) {
+        container.innerHTML = ""; // Clear existing filters if any
+
+        procategorys.forEach(function (procategory) {
+            // Use the correct spelling from JSON
+            let procategorylabel = procategory.Procatgory;
+
+            var filterHtml = `
+                <div class="form-check">
+                    <input class="procategory form-check-input" type="checkbox"
+                        id="procategory${procategory.id}" name="procategory" data-id="${procategory.id}"
+                        value="${procategorylabel}" onclick="getProCategory(${procategory.id})">
+                    <label class="form-check-label">
+                        ${procategorylabel}
+                    </label>
+                </div>
+            `;
+            container.insertAdjacentHTML("beforeend", filterHtml);
+        });
+    }
+}
+
+function appendPurityFilters() {
+    let purities = JSON.parse($("#purityFilter").val());
+
+    let container = document.getElementById("purity-filters-container");
+    if (container) {
+        container.innerHTML = ""; // Clear existing filters if any
+
+        purities.forEach(function (purity) {
+            // Use the correct spelling from JSON
+            let puritylabel = purity.Purity;
+
+            var filterHtml = `
+                <div class="form-check">
+                    <input class="purity form-check-input" type="checkbox"
+                        id="purity${purity.id}" name="purity" data-id="${purity.id}"
+                        value="${puritylabel}" onclick="getPurity(${purity.id})">
+                    <label class="form-check-label">
+                        ${puritylabel}
+                    </label>
+                </div>
+            `;
+            container.insertAdjacentHTML("beforeend", filterHtml);
+        });
+    }
+}
+
+$(document).ready(function () {
+    // Call the function to append the filters
+    appendProCategoryFilters();
+    appendProductFilters();
+    appendPurityFilters();
+});
+
+async function loadSecureImages() {
+    try {
+        const res = await fetch("/retailer/proxy/token");
+        const data = await res.json();
+        const token = data.token;
+
+        if (!token) {
+            throw new Error("Token not received from /retailer/proxy/token");
+        }
+
+        const secureImages = document.querySelectorAll(".load-secure-image");
+
+        secureImages.forEach(async (img) => {
+            const secureFilename = img.dataset.secure;
+
+            try {
+                const imageRes = await fetch("/retailer/proxy/secure-image", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `${token}`,
+                    },
+                    body: JSON.stringify({
+                        secureFilename,
+                    }),
+                });
+
+                if (!imageRes.ok) {
+                    throw new Error(
+                        `Failed to fetch image for ${secureFilename}`
+                    );
+                }
+
+                const blob = await imageRes.blob();
+                const imageUrl = URL.createObjectURL(blob);
+                img.src = imageUrl;
+            } catch (error) {
+                console.error("Image load failed:", error);
+                img.alt = "Image load failed";
+            }
+        });
+    } catch (err) {
+        console.error("Token fetch failed:", err);
+    }
+}
+
+function clearAllSelectedInputs() {
+    // Optionally, you can reload the page to reset everything
+    window.location.reload();
+}
