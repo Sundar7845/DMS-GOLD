@@ -58,22 +58,22 @@
                     <li class="nav-item">
                         <a href="{{ route('retailerindianiareadystock') }}">INDIANIA</a>
                     </li>
-                    {{-- <li class="nav-item">
-                        <a href="{{ route('retailerutensilreadystock') }}">LASERCUT</a>
-                    </li> --}}
                     <li class="nav-item">
-                        <a href="{{ route('mmd') }}">MMD</a>
+                        <a href="{{ route('retailerutensilreadystock') }}">LASERCUT</a>
                     </li>
+                    {{-- <li class="nav-item">
+                        <a href="{{ route('mmd') }}">MMD</a>
+                    </li> --}}
                     <li class="nav-item">
                         <a href="{{ route('stamping') }}">STAMPING</a>
                     </li>
-                    {{-- <li class="nav-item">
+                    <li class="nav-item">
                         <a href="{{ route('turkish') }}">TURKISH</a>
                     </li>
                     <li class="nav-item">
                         <a href="{{ route('unikraft') }}">UNIKRAFT</a>
-                    </li> --}}
-                    <li class="nav-item">
+                    </li>
+                    {{-- <li class="nav-item">
                         <a href="{{ route('diamond') }}">DIAMOND</a>
                     </li>
                     <li class="nav-item">
@@ -90,7 +90,7 @@
                     </li>
                     <li class="nav-item">
                         <a href="{{ route('italianchain') }}">ITALIAN CHAIN</a>
-                    </li>
+                    </li> --}}
                     {{-- <li class="nav-item">
                         <a href="{{ route('ilabangles') }}">ILA BANGLES</a>
                     </li> --}}
@@ -101,8 +101,29 @@
                         <a href="{{ route('ishtaa') }}">ISHTAA</a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ route('rings') }}">Casting - 22k - Ring</a>
+                        <a href="{{ route('chiara') }}">CHIARA</a>
                     </li>
+                    <li class="nav-item">
+                        <a href="{{ route('directcasting') }}">DIRECT CASTING</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('ektara') }}">EKTARA</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('fusion') }}">FUSION</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('kalakriti') }}">KALAKRITI</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('mangalsutra') }}">MANGALSUTRA</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('thincasting') }}">THIN CASTING</a>
+                    </li>
+                    {{-- <li class="nav-item">
+                        <a href="{{ route('rings') }}">Casting - 22k - Ring</a>
+                    </li> --}}
                 </ul>
             </div>
         </section>
@@ -311,10 +332,10 @@
                                             <span class="loginBtn_text">Login</span>
                                         </button>
                                     </form>
-                                    {{-- <div class="mt-3">Don’t have an account? <a href="#"
+                                    <div class="mt-3">Don’t have an account? <a href="#"
                                             class="sign-up-text text-decoration-none fw-medium"
                                             onclick="showSignupScreenFromLogin()">Sign
-                                            Up Now</a></div> --}}
+                                            Up Now</a></div>
                                 </div>
                             </div>
 

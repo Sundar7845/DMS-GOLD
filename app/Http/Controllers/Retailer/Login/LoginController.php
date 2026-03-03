@@ -8,6 +8,7 @@ use App\Models\Dealer;
 use App\Models\Role;
 use App\Models\Settings;
 use App\Models\User;
+use App\Models\UserLogin;
 use App\Models\UserPhone;
 use App\Models\Zone;
 use App\Traits\Common;
@@ -80,6 +81,14 @@ class LoginController extends Controller
             ]);
             DB::commit();
             Auth::login($user);
+
+            UserLogin::create([
+                'user_id' => $user->id,
+                'login_at' => now(),
+                'last_activity' => now(),
+                'ip_address' => request()->ip()
+            ]);
+
             return response()->json([
                 'alert' => 'success',
                 'message' => 'Retailer Created Successfully'
@@ -226,6 +235,14 @@ class LoginController extends Controller
                 }
 
                 Auth::login($user);
+
+                UserLogin::create([
+                    'user_id' => $user->id,
+                    'login_at' => Carbon::now(),
+                    'last_activity' => Carbon::now(),
+                    'ip_address' => request()->ip()
+                ]);
+
                 return response()->json([
                     'success' => true,
                     'message' => 'OTP verified successfully.'
@@ -285,6 +302,14 @@ class LoginController extends Controller
 
     function logout()
     {
+
+        UserLogin::where('user_id', Auth::id())
+            ->whereNull('logout_at')
+            ->latest()
+            ->update([
+                'logout_at' => now()
+            ]);
+
         Auth::logout();
         Session::flush();
         request()->session()->invalidate();

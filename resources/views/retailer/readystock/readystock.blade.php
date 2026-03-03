@@ -62,6 +62,20 @@
         ISHTAA
     @elseif($currentUrl == route('rings'))
         RINGS
+    @elseif($currentUrl == route('chiara'))
+        CHIARA
+    @elseif($currentUrl == route('directcasting'))
+        DIRECT CASTING
+    @elseif($currentUrl == route('ektara'))
+        EKTARA
+    @elseif($currentUrl == route('fusion'))
+        FUSION
+    @elseif($currentUrl == route('kalakriti'))
+        KALAKRITI
+    @elseif($currentUrl == route('mangalsutra'))
+        MANGALSUTRA
+    @elseif($currentUrl == route('thincasting'))
+        THIN CASTING
     @elseif($currentUrl == route('retailersearch'))
         search
     @endif- Emerald RMS

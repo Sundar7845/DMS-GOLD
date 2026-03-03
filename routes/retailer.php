@@ -81,6 +81,13 @@ Route::prefix('retailer')->group(function () {
         Route::get('mariya', [\App\Http\Controllers\Retailer\EF\ReadyStockController::class, 'mariya'])->name('mariya');
         Route::get('ishtaa', [\App\Http\Controllers\Retailer\EF\ReadyStockController::class, 'ishtaa'])->name('ishtaa');
         Route::get('rings', [\App\Http\Controllers\Retailer\EF\ReadyStockController::class, 'rings'])->name('rings');
+        Route::get('chiara', [\App\Http\Controllers\Retailer\EF\ReadyStockController::class, 'chiara'])->name('chiara');
+        Route::get('directcasting', [\App\Http\Controllers\Retailer\EF\ReadyStockController::class, 'directcasting'])->name('directcasting');
+        Route::get('ektara', [\App\Http\Controllers\Retailer\EF\ReadyStockController::class, 'ektara'])->name('ektara');
+        Route::get('fusion', [\App\Http\Controllers\Retailer\EF\ReadyStockController::class, 'fusion'])->name('fusion');
+        Route::get('kalakriti', [\App\Http\Controllers\Retailer\EF\ReadyStockController::class, 'kalakriti'])->name('kalakriti');
+        Route::get('mangalsutra', [\App\Http\Controllers\Retailer\EF\ReadyStockController::class, 'mangalsutra'])->name('mangalsutra');
+        Route::get('thincasting', [\App\Http\Controllers\Retailer\EF\ReadyStockController::class, 'thincasting'])->name('thincasting');
         Route::get('productdetail/{id}', [\App\Http\Controllers\Retailer\EF\ReadyStockController::class, 'productDetail'])->name('retailerproductdetail');
         Route::post('addtocart', [\App\Http\Controllers\Retailer\EF\ReadyStockController::class, 'addToCart'])->name('retaileraddtocart');
         Route::post('addforcart', [\App\Http\Controllers\Retailer\EF\ReadyStockController::class, 'addForCart'])->name('retaileraddforcart');

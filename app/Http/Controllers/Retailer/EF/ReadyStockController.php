@@ -35,67 +35,67 @@ class ReadyStockController extends Controller
     private $paginate = 20;
     use Common;
 
-    function search(Request $request)
-    {
-        ini_set('memory_limit', '512M');
-        ini_set('max_execution_time', 180);
+    // function search(Request $request)
+    // {
+    //     ini_set('memory_limit', '512M');
+    //     ini_set('max_execution_time', 180);
 
-        $search = $request->search;
-        $secret = 'EmeraldAdmin';
+    //     $search = $request->search;
+    //     // $secret = 'EmeraldAdmin';
 
-        $products = $this->getproducts(Auth::user()->id)
-            ->whereIn('products.project', [
-                Projects::EF,
-                Projects::LASERCUT,
-                Projects::CASTING,
-                Projects::IMPREZ,
-                Projects::INDIANIA,
-                Projects::MMD,
-                Projects::STAMPING,
-                Projects::TURKISH,
-                Projects::UNIKRAFT
-            ])
-            ->where('products.DesignNo', 'like', '%' . $search . '%')
-            ->where('products.qty', '>', 0)
-            ->orderBy('products.DesignNo', 'ASC')
-            ->get();
+    //     $products = $this->getproducts(Auth::user()->id)
+    //         ->whereIn('products.project', [
+    //             Projects::EF,
+    //             Projects::LASERCUT,
+    //             Projects::CASTING,
+    //             Projects::IMPREZ,
+    //             Projects::INDIANIA,
+    //             Projects::MMD,
+    //             Projects::STAMPING,
+    //             Projects::TURKISH,
+    //             Projects::UNIKRAFT
+    //         ])
+    //         ->where('products.DesignNo', 'like', '%' . $search . '%')
+    //         ->where('products.qty', '>', 0)
+    //         ->orderBy('products.DesignNo', 'ASC')
+    //         ->get();
 
-        $filteredProducts = $products
-            ->map(function ($product) use ($secret) {
-                $product->secureFilename = $this->cryptoJsAesEncrypt($secret, $product->product_image);
-                return $product;
-            });
+    //     $filteredProducts = $products
+    //         ->map(function ($product) use ($secret) {
+    //             $product->secureFilename = $this->cryptoJsAesEncrypt($secret, $product->product_image);
+    //             return $product;
+    //         });
 
-        // Paginate
-        $page = $request->get('page', 1);
-        $perPage = $this->paginate;
-        $paginatedProducts = new \Illuminate\Pagination\LengthAwarePaginator(
-            $filteredProducts->forPage($page, $perPage),
-            $filteredProducts->count(),
-            $perPage,
-            $page,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
+    //     // Paginate
+    //     $page = $request->get('page', 1);
+    //     $perPage = $this->paginate;
+    //     $paginatedProducts = new \Illuminate\Pagination\LengthAwarePaginator(
+    //         $filteredProducts->forPage($page, $perPage),
+    //         $filteredProducts->count(),
+    //         $perPage,
+    //         $page,
+    //         ['path' => $request->url(), 'query' => $request->query()]
+    //     );
 
-        $product = $paginatedProducts;
-        $allProduct = Product::get();
-        $stock = 1;
-        $breadcrum = null;
-        $breadcrumUrl = null;
-        $project_id = null;
+    //     $product = $paginatedProducts;
+    //     $allProduct = Product::get();
+    //     $stock = 1;
+    //     $breadcrum = null;
+    //     $breadcrumUrl = null;
+    //     $project_id = null;
 
-        $request->session()->put('ret_ses', $search);
+    //     $request->session()->put('ret_ses', $search);
 
-        return view('retailer.readystock.readystock', compact(
-            'product',
-            'allProduct',
-            'stock',
-            'search',
-            'breadcrumUrl',
-            'breadcrum',
-            'project_id'
-        ));
-    }
+    //     return view('retailer.readystock.readystock', compact(
+    //         'product',
+    //         'allProduct',
+    //         'stock',
+    //         'search',
+    //         'breadcrumUrl',
+    //         'breadcrum',
+    //         'project_id'
+    //     ));
+    // }
 
     public function ef(Request $request)
     {
@@ -129,10 +129,10 @@ class ReadyStockController extends Controller
             ->orderBy('products.DesignNo', 'ASC');
 
         $rawProducts = $productQuery->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants by product ID
-        $grouped = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -149,7 +149,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -221,10 +221,10 @@ class ReadyStockController extends Controller
             ->orderBy('products.DesignNo', 'ASC');
 
         $rawProducts = $productQuery->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants by product ID
-        $grouped = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -241,7 +241,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -313,10 +313,10 @@ class ReadyStockController extends Controller
             ->orderBy('products.DesignNo', 'ASC');
 
         $rawProducts = $productQuery->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants by product ID
-        $grouped = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -333,7 +333,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -405,10 +405,10 @@ class ReadyStockController extends Controller
             ->orderBy('products.DesignNo', 'ASC');
 
         $rawProducts = $productQuery->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants by product ID
-        $grouped = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -425,7 +425,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -497,10 +497,10 @@ class ReadyStockController extends Controller
             ->orderBy('products.DesignNo', 'ASC');
 
         $rawProducts = $productQuery->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants by product ID
-        $grouped = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -517,7 +517,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -589,10 +589,10 @@ class ReadyStockController extends Controller
             ->orderBy('products.DesignNo', 'ASC');
 
         $rawProducts = $productQuery->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants by product ID
-        $grouped = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -609,7 +609,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -681,10 +681,10 @@ class ReadyStockController extends Controller
             ->orderBy('products.DesignNo', 'ASC');
 
         $rawProducts = $productQuery->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants by product ID
-        $grouped = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -701,7 +701,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -773,10 +773,10 @@ class ReadyStockController extends Controller
             ->orderBy('products.DesignNo', 'ASC');
 
         $rawProducts = $productQuery->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants by product ID
-        $grouped = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -793,7 +793,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -865,10 +865,10 @@ class ReadyStockController extends Controller
             ->orderBy('products.DesignNo', 'ASC');
 
         $rawProducts = $productQuery->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants by product ID
-        $grouped = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -885,7 +885,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -957,10 +957,10 @@ class ReadyStockController extends Controller
             ->orderBy('products.DesignNo', 'ASC');
 
         $rawProducts = $productQuery->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants by product ID
-        $grouped = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -977,7 +977,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -1051,10 +1051,10 @@ class ReadyStockController extends Controller
             ->orderBy('products.DesignNo', 'ASC');
 
         $rawProducts = $productQuery->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants by product ID
-        $grouped = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -1071,7 +1071,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -1143,10 +1143,10 @@ class ReadyStockController extends Controller
             ->orderBy('products.DesignNo', 'ASC');
 
         $rawProducts = $productQuery->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants by product ID
-        $grouped = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -1163,7 +1163,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -1235,10 +1235,10 @@ class ReadyStockController extends Controller
             ->orderBy('products.DesignNo', 'ASC');
 
         $rawProducts = $productQuery->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants by product ID
-        $grouped = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -1255,7 +1255,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -1327,10 +1327,10 @@ class ReadyStockController extends Controller
             ->orderBy('products.DesignNo', 'ASC');
 
         $rawProducts = $productQuery->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants by product ID
-        $grouped = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -1347,7 +1347,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -1419,10 +1419,10 @@ class ReadyStockController extends Controller
             ->orderBy('products.DesignNo', 'ASC');
 
         $rawProducts = $productQuery->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants by product ID
-        $grouped = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -1439,7 +1439,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -1511,10 +1511,10 @@ class ReadyStockController extends Controller
             ->orderBy('products.DesignNo', 'ASC');
 
         $rawProducts = $productQuery->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants by product ID
-        $grouped = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -1531,7 +1531,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -1603,10 +1603,10 @@ class ReadyStockController extends Controller
             ->orderBy('products.DesignNo', 'ASC');
 
         $rawProducts = $productQuery->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants by product ID
-        $grouped = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -1623,7 +1623,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -1695,10 +1695,10 @@ class ReadyStockController extends Controller
             ->orderBy('products.DesignNo', 'ASC');
 
         $rawProducts = $productQuery->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants by product ID
-        $grouped = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -1715,7 +1715,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -1789,10 +1789,10 @@ class ReadyStockController extends Controller
             ->orderBy('products.DesignNo', 'ASC');
 
         $rawProducts = $productQuery->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants by product ID
-        $grouped = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -1809,7 +1809,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -1837,6 +1837,657 @@ class ReadyStockController extends Controller
         $breadcrum = 'RINGS';
         $breadcrumUrl = route('rings');
         $decryptedProjectId = Projects::CASTING;
+
+        return view('retailer.readystock.readystock', compact(
+            'allProduct',
+            'product',
+            'decryptedProjectId',
+            'project_id',
+            'breadcrum',
+            'breadcrumUrl',
+            'stock'
+        ));
+    }
+
+    public function chiara(Request $request)
+    {
+        ini_set('max_execution_time', 300);
+        ini_set('memory_limit', '1024M');
+        $user_id = Auth::user()->id;
+
+        // Fetch all matching products with variants
+        $productQuery = Product::select(
+            'products.*',
+            'product_variants.id as productID',
+            'product_variants.qty',
+            'product_variants.weight',
+            'product_variants.color',
+            'product_variants.size',
+            'product_variants.Purity',
+            'product_variants.style',
+            'product_variants.making',
+            'product_variants.unit',
+            'wishlists.is_favourite'
+        )
+            ->join('product_variants', function ($join) {
+                $join->on('products.id', '=', 'product_variants.product_id')
+                    ->where('product_variants.qty', '>', 0)
+                    ->where('product_variants.Purity', '22K-91.75');
+            })
+            ->leftJoin('wishlists', function ($join) use ($user_id) {
+                $join->on('wishlists.product_id', '=', 'products.id')
+                    ->where('wishlists.user_id', '=', $user_id);
+            })
+            ->where('products.project', Projects::CHIARA)
+            ->orderBy('products.DesignNo', 'ASC');
+
+        $rawProducts = $productQuery->get();
+        // $secret = 'EmeraldAdmin';
+
+        // Group variants by product ID
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
+            $base = $items->first();
+
+            $base->variants = $items->map(function ($item) {
+                return [
+                    'productID' => $item->productID,
+                    'Purity' => $item->Purity,
+                    'color' => $item->color,
+                    'unit' => $item->unit,
+                    'style' => $item->style,
+                    'making' => $item->making,
+                    'size' => $item->size,
+                    'weight' => $item->weight,
+                    'qty' => $item->qty,
+                ];
+            });
+
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
+            $base->variant_count = $items->count();
+
+            return $base;
+        })->values();
+
+        // Manual pagination
+        $page = $request->get('page', 1);
+        $perPage = $this->paginate;
+
+        $paginated = new LengthAwarePaginator(
+            $grouped->forPage($page, $perPage),
+            $grouped->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        $product = $paginated;
+        $project_id = Projects::CHIARA;
+        $allProduct = Product::select('products.id')->join('product_variants', 'product_variants.product_id', 'products.id')
+            ->where('products.project', Projects::CHIARA)
+            ->where('product_variants.qty', '>', 0)
+            ->get();
+        $stock = 1;
+        $breadcrum = 'CHIARA';
+        $breadcrumUrl = route('chiara');
+        $decryptedProjectId = Projects::CHIARA;
+
+        return view('retailer.readystock.readystock', compact(
+            'allProduct',
+            'product',
+            'decryptedProjectId',
+            'project_id',
+            'breadcrum',
+            'breadcrumUrl',
+            'stock'
+        ));
+    }
+
+    public function directcasting(Request $request)
+    {
+        ini_set('max_execution_time', 300);
+        ini_set('memory_limit', '1024M');
+        $user_id = Auth::user()->id;
+
+        // Fetch all matching products with variants
+        $productQuery = Product::select(
+            'products.*',
+            'product_variants.id as productID',
+            'product_variants.qty',
+            'product_variants.weight',
+            'product_variants.color',
+            'product_variants.size',
+            'product_variants.Purity',
+            'product_variants.style',
+            'product_variants.making',
+            'product_variants.unit',
+            'wishlists.is_favourite'
+        )
+            ->join('product_variants', function ($join) {
+                $join->on('products.id', '=', 'product_variants.product_id')
+                    ->where('product_variants.qty', '>', 0)
+                    ->where('product_variants.Purity', '22K-91.75');
+            })
+            ->leftJoin('wishlists', function ($join) use ($user_id) {
+                $join->on('wishlists.product_id', '=', 'products.id')
+                    ->where('wishlists.user_id', '=', $user_id);
+            })
+            ->where('products.project', Projects::DIRECTCASTING)
+            ->orderBy('products.DesignNo', 'ASC');
+
+        $rawProducts = $productQuery->get();
+        // $secret = 'EmeraldAdmin';
+
+        // Group variants by product ID
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
+            $base = $items->first();
+
+            $base->variants = $items->map(function ($item) {
+                return [
+                    'productID' => $item->productID,
+                    'Purity' => $item->Purity,
+                    'color' => $item->color,
+                    'unit' => $item->unit,
+                    'style' => $item->style,
+                    'making' => $item->making,
+                    'size' => $item->size,
+                    'weight' => $item->weight,
+                    'qty' => $item->qty,
+                ];
+            });
+
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
+            $base->variant_count = $items->count();
+
+            return $base;
+        })->values();
+
+        // Manual pagination
+        $page = $request->get('page', 1);
+        $perPage = $this->paginate;
+
+        $paginated = new LengthAwarePaginator(
+            $grouped->forPage($page, $perPage),
+            $grouped->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        $product = $paginated;
+        $project_id = Projects::DIRECTCASTING;
+        $allProduct = Product::select('products.id')->join('product_variants', 'product_variants.product_id', 'products.id')
+            ->where('products.project', Projects::DIRECTCASTING)
+            ->where('product_variants.qty', '>', 0)
+            ->get();
+        $stock = 1;
+        $breadcrum = 'DIRECTCASTING';
+        $breadcrumUrl = route('directcasting');
+        $decryptedProjectId = Projects::DIRECTCASTING;
+
+        return view('retailer.readystock.readystock', compact(
+            'allProduct',
+            'product',
+            'decryptedProjectId',
+            'project_id',
+            'breadcrum',
+            'breadcrumUrl',
+            'stock'
+        ));
+    }
+
+    public function ektara(Request $request)
+    {
+        ini_set('max_execution_time', 300);
+        ini_set('memory_limit', '1024M');
+        $user_id = Auth::user()->id;
+
+        // Fetch all matching products with variants
+        $productQuery = Product::select(
+            'products.*',
+            'product_variants.id as productID',
+            'product_variants.qty',
+            'product_variants.weight',
+            'product_variants.color',
+            'product_variants.size',
+            'product_variants.Purity',
+            'product_variants.style',
+            'product_variants.making',
+            'product_variants.unit',
+            'wishlists.is_favourite'
+        )
+            ->join('product_variants', function ($join) {
+                $join->on('products.id', '=', 'product_variants.product_id')
+                    ->where('product_variants.qty', '>', 0)
+                    ->where('product_variants.Purity', '22K-91.75');
+            })
+            ->leftJoin('wishlists', function ($join) use ($user_id) {
+                $join->on('wishlists.product_id', '=', 'products.id')
+                    ->where('wishlists.user_id', '=', $user_id);
+            })
+            ->where('products.project', Projects::EKTARA)
+            ->orderBy('products.DesignNo', 'ASC');
+
+        $rawProducts = $productQuery->get();
+        // $secret = 'EmeraldAdmin';
+
+        // Group variants by product ID
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
+            $base = $items->first();
+
+            $base->variants = $items->map(function ($item) {
+                return [
+                    'productID' => $item->productID,
+                    'Purity' => $item->Purity,
+                    'color' => $item->color,
+                    'unit' => $item->unit,
+                    'style' => $item->style,
+                    'making' => $item->making,
+                    'size' => $item->size,
+                    'weight' => $item->weight,
+                    'qty' => $item->qty,
+                ];
+            });
+
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
+            $base->variant_count = $items->count();
+
+            return $base;
+        })->values();
+
+        // Manual pagination
+        $page = $request->get('page', 1);
+        $perPage = $this->paginate;
+
+        $paginated = new LengthAwarePaginator(
+            $grouped->forPage($page, $perPage),
+            $grouped->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        $product = $paginated;
+        $project_id = Projects::EKTARA;
+        $allProduct = Product::select('products.id')->join('product_variants', 'product_variants.product_id', 'products.id')
+            ->where('products.project', Projects::EKTARA)
+            ->where('product_variants.qty', '>', 0)
+            ->get();
+        $stock = 1;
+        $breadcrum = 'EKTARA';
+        $breadcrumUrl = route('ektara');
+        $decryptedProjectId = Projects::EKTARA;
+
+        return view('retailer.readystock.readystock', compact(
+            'allProduct',
+            'product',
+            'decryptedProjectId',
+            'project_id',
+            'breadcrum',
+            'breadcrumUrl',
+            'stock'
+        ));
+    }
+
+    public function fusion(Request $request)
+    {
+        ini_set('max_execution_time', 300);
+        ini_set('memory_limit', '1024M');
+        $user_id = Auth::user()->id;
+
+        // Fetch all matching products with variants
+        $productQuery = Product::select(
+            'products.*',
+            'product_variants.id as productID',
+            'product_variants.qty',
+            'product_variants.weight',
+            'product_variants.color',
+            'product_variants.size',
+            'product_variants.Purity',
+            'product_variants.style',
+            'product_variants.making',
+            'product_variants.unit',
+            'wishlists.is_favourite'
+        )
+            ->join('product_variants', function ($join) {
+                $join->on('products.id', '=', 'product_variants.product_id')
+                    ->where('product_variants.qty', '>', 0)
+                    ->where('product_variants.Purity', '22K-91.75');
+            })
+            ->leftJoin('wishlists', function ($join) use ($user_id) {
+                $join->on('wishlists.product_id', '=', 'products.id')
+                    ->where('wishlists.user_id', '=', $user_id);
+            })
+            ->where('products.project', Projects::FUSION)
+            ->orderBy('products.DesignNo', 'ASC');
+
+        $rawProducts = $productQuery->get();
+        // $secret = 'EmeraldAdmin';
+
+        // Group variants by product ID
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
+            $base = $items->first();
+
+            $base->variants = $items->map(function ($item) {
+                return [
+                    'productID' => $item->productID,
+                    'Purity' => $item->Purity,
+                    'color' => $item->color,
+                    'unit' => $item->unit,
+                    'style' => $item->style,
+                    'making' => $item->making,
+                    'size' => $item->size,
+                    'weight' => $item->weight,
+                    'qty' => $item->qty,
+                ];
+            });
+
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
+            $base->variant_count = $items->count();
+
+            return $base;
+        })->values();
+
+        // Manual pagination
+        $page = $request->get('page', 1);
+        $perPage = $this->paginate;
+
+        $paginated = new LengthAwarePaginator(
+            $grouped->forPage($page, $perPage),
+            $grouped->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        $product = $paginated;
+        $project_id = Projects::FUSION;
+        $allProduct = Product::select('products.id')->join('product_variants', 'product_variants.product_id', 'products.id')
+            ->where('products.project', Projects::FUSION)
+            ->where('product_variants.qty', '>', 0)
+            ->get();
+        $stock = 1;
+        $breadcrum = 'FUSION';
+        $breadcrumUrl = route('fusion');
+        $decryptedProjectId = Projects::FUSION;
+
+        return view('retailer.readystock.readystock', compact(
+            'allProduct',
+            'product',
+            'decryptedProjectId',
+            'project_id',
+            'breadcrum',
+            'breadcrumUrl',
+            'stock'
+        ));
+    }
+
+    public function kalakriti(Request $request)
+    {
+        ini_set('max_execution_time', 300);
+        ini_set('memory_limit', '1024M');
+        $user_id = Auth::user()->id;
+
+        // Fetch all matching products with variants
+        $productQuery = Product::select(
+            'products.*',
+            'product_variants.id as productID',
+            'product_variants.qty',
+            'product_variants.weight',
+            'product_variants.color',
+            'product_variants.size',
+            'product_variants.Purity',
+            'product_variants.style',
+            'product_variants.making',
+            'product_variants.unit',
+            'wishlists.is_favourite'
+        )
+            ->join('product_variants', function ($join) {
+                $join->on('products.id', '=', 'product_variants.product_id')
+                    ->where('product_variants.qty', '>', 0)
+                    ->where('product_variants.Purity', '22K-91.75');
+            })
+            ->leftJoin('wishlists', function ($join) use ($user_id) {
+                $join->on('wishlists.product_id', '=', 'products.id')
+                    ->where('wishlists.user_id', '=', $user_id);
+            })
+            ->where('products.project', Projects::KALAKRITI)
+            ->orderBy('products.DesignNo', 'ASC');
+
+        $rawProducts = $productQuery->get();
+        // $secret = 'EmeraldAdmin';
+
+        // Group variants by product ID
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
+            $base = $items->first();
+
+            $base->variants = $items->map(function ($item) {
+                return [
+                    'productID' => $item->productID,
+                    'Purity' => $item->Purity,
+                    'color' => $item->color,
+                    'unit' => $item->unit,
+                    'style' => $item->style,
+                    'making' => $item->making,
+                    'size' => $item->size,
+                    'weight' => $item->weight,
+                    'qty' => $item->qty,
+                ];
+            });
+
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
+            $base->variant_count = $items->count();
+
+            return $base;
+        })->values();
+
+        // Manual pagination
+        $page = $request->get('page', 1);
+        $perPage = $this->paginate;
+
+        $paginated = new LengthAwarePaginator(
+            $grouped->forPage($page, $perPage),
+            $grouped->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        $product = $paginated;
+        $project_id = Projects::KALAKRITI;
+        $allProduct = Product::select('products.id')->join('product_variants', 'product_variants.product_id', 'products.id')
+            ->where('products.project', Projects::KALAKRITI)
+            ->where('product_variants.qty', '>', 0)
+            ->get();
+        $stock = 1;
+        $breadcrum = 'KALAKRITI';
+        $breadcrumUrl = route('kalakriti');
+        $decryptedProjectId = Projects::KALAKRITI;
+
+        return view('retailer.readystock.readystock', compact(
+            'allProduct',
+            'product',
+            'decryptedProjectId',
+            'project_id',
+            'breadcrum',
+            'breadcrumUrl',
+            'stock'
+        ));
+    }
+
+    public function mangalsutra(Request $request)
+    {
+        ini_set('max_execution_time', 300);
+        ini_set('memory_limit', '1024M');
+        $user_id = Auth::user()->id;
+
+        // Fetch all matching products with variants
+        $productQuery = Product::select(
+            'products.*',
+            'product_variants.id as productID',
+            'product_variants.qty',
+            'product_variants.weight',
+            'product_variants.color',
+            'product_variants.size',
+            'product_variants.Purity',
+            'product_variants.style',
+            'product_variants.making',
+            'product_variants.unit',
+            'wishlists.is_favourite'
+        )
+            ->join('product_variants', function ($join) {
+                $join->on('products.id', '=', 'product_variants.product_id')
+                    ->where('product_variants.qty', '>', 0)
+                    ->where('product_variants.Purity', '22K-91.75');
+            })
+            ->leftJoin('wishlists', function ($join) use ($user_id) {
+                $join->on('wishlists.product_id', '=', 'products.id')
+                    ->where('wishlists.user_id', '=', $user_id);
+            })
+            ->where('products.project', Projects::MANGALSUTRA)
+            ->orderBy('products.DesignNo', 'ASC');
+
+        $rawProducts = $productQuery->get();
+        // $secret = 'EmeraldAdmin';
+
+        // Group variants by product ID
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
+            $base = $items->first();
+
+            $base->variants = $items->map(function ($item) {
+                return [
+                    'productID' => $item->productID,
+                    'Purity' => $item->Purity,
+                    'color' => $item->color,
+                    'unit' => $item->unit,
+                    'style' => $item->style,
+                    'making' => $item->making,
+                    'size' => $item->size,
+                    'weight' => $item->weight,
+                    'qty' => $item->qty,
+                ];
+            });
+
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
+            $base->variant_count = $items->count();
+
+            return $base;
+        })->values();
+
+        // Manual pagination
+        $page = $request->get('page', 1);
+        $perPage = $this->paginate;
+
+        $paginated = new LengthAwarePaginator(
+            $grouped->forPage($page, $perPage),
+            $grouped->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        $product = $paginated;
+        $project_id = Projects::MANGALSUTRA;
+        $allProduct = Product::select('products.id')->join('product_variants', 'product_variants.product_id', 'products.id')
+            ->where('products.project', Projects::MANGALSUTRA)
+            ->where('product_variants.qty', '>', 0)
+            ->get();
+        $stock = 1;
+        $breadcrum = 'MANGALSUTRA';
+        $breadcrumUrl = route('mangalsutra');
+        $decryptedProjectId = Projects::MANGALSUTRA;
+
+        return view('retailer.readystock.readystock', compact(
+            'allProduct',
+            'product',
+            'decryptedProjectId',
+            'project_id',
+            'breadcrum',
+            'breadcrumUrl',
+            'stock'
+        ));
+    }
+
+    public function thincasting(Request $request)
+    {
+        ini_set('max_execution_time', 300);
+        ini_set('memory_limit', '1024M');
+        $user_id = Auth::user()->id;
+
+        // Fetch all matching products with variants
+        $productQuery = Product::select(
+            'products.*',
+            'product_variants.id as productID',
+            'product_variants.qty',
+            'product_variants.weight',
+            'product_variants.color',
+            'product_variants.size',
+            'product_variants.Purity',
+            'product_variants.style',
+            'product_variants.making',
+            'product_variants.unit',
+            'wishlists.is_favourite'
+        )
+            ->join('product_variants', function ($join) {
+                $join->on('products.id', '=', 'product_variants.product_id')
+                    ->where('product_variants.qty', '>', 0);
+            })
+            ->leftJoin('wishlists', function ($join) use ($user_id) {
+                $join->on('wishlists.product_id', '=', 'products.id')
+                    ->where('wishlists.user_id', '=', $user_id);
+            })
+            ->where('products.project', Projects::THINCASTING)
+            ->orderBy('products.DesignNo', 'ASC');
+
+        $rawProducts = $productQuery->get();
+        // $secret = 'EmeraldAdmin';
+
+        // Group variants by product ID
+        $grouped = $rawProducts->groupBy('id')->map(function ($items) {
+            $base = $items->first();
+
+            $base->variants = $items->map(function ($item) {
+                return [
+                    'productID' => $item->productID,
+                    'Purity' => $item->Purity,
+                    'color' => $item->color,
+                    'unit' => $item->unit,
+                    'style' => $item->style,
+                    'making' => $item->making,
+                    'size' => $item->size,
+                    'weight' => $item->weight,
+                    'qty' => $item->qty,
+                ];
+            });
+
+            // 🔥 NEW ENCRYPT API
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
+            $base->variant_count = $items->count();
+
+            return $base;
+        })->values();
+
+        // Manual pagination
+        $page = $request->get('page', 1);
+        $perPage = $this->paginate;
+
+        $paginated = new LengthAwarePaginator(
+            $grouped->forPage($page, $perPage),
+            $grouped->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        $product = $paginated;
+        $project_id = Projects::THINCASTING;
+        $allProduct = Product::select('products.id')->join('product_variants', 'product_variants.product_id', 'products.id')
+            ->where('products.project', Projects::THINCASTING)
+            ->where('product_variants.qty', '>', 0)
+            ->get();
+        $stock = 1;
+        $breadcrum = 'THINCASTING';
+        $breadcrumUrl = route('thincasting');
+        $decryptedProjectId = Projects::THINCASTING;
 
         return view('retailer.readystock.readystock', compact(
             'allProduct',
@@ -1896,12 +2547,42 @@ class ReadyStockController extends Controller
         return urlencode(base64_encode($ciphertext));
     }
 
+    public function encryptFilename($filename)
+    {
+        if (!$filename) return null;
+
+        return Cache::remember('img_encrypt_' . md5($filename), 86400, function () use ($filename) {
+
+            try {
+                $response = Http::timeout(15)
+                    ->withHeaders([
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json'
+                    ])
+                    ->post('https://imageurl.ejindia.com/api/image/encrypt', [
+                        'filename' => $filename
+                    ]);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+
+                    // IMPORTANT → correct field
+                    return $data['urlSafe'] ?? null;
+                }
+
+                return null;
+            } catch (Exception $e) {
+                return null;
+            }
+        });
+    }
+
     public function productDetail($id)
     {
         ini_set('max_execution_time', 1800); // 3 minutes
         $decryptedId = decrypt($id);
         $user_id = Auth::user()->id;
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Fetch product and variant details for a single product
         $rawProduct = Product::select(
@@ -1948,7 +2629,7 @@ class ReadyStockController extends Controller
             ];
         });
 
-        $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+        $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
         $base->variant_count = $rawProduct->count();
 
         // Get current cart qty for this product
@@ -2361,10 +3042,10 @@ class ReadyStockController extends Controller
 
         // ✅ Fetch filtered products
         $rawProducts = $itemwiseproduct->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants under each product
-        $groupedProducts = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $groupedProducts = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -2381,7 +3062,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -2540,10 +3221,10 @@ class ReadyStockController extends Controller
 
         // ✅ Fetch filtered products
         $rawProducts = $procategorywiseproduct->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants
-        $groupedProducts = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $groupedProducts = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -2560,7 +3241,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;
@@ -2712,10 +3393,10 @@ class ReadyStockController extends Controller
 
         // ✅ Fetch filtered products
         $rawProducts = $puritywiseproduct->get();
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
 
         // Group variants under each product
-        $groupedProducts = $rawProducts->groupBy('id')->map(function ($items) use ($secret) {
+        $groupedProducts = $rawProducts->groupBy('id')->map(function ($items) {
             $base = $items->first();
 
             $base->variants = $items->map(function ($item) {
@@ -2732,7 +3413,7 @@ class ReadyStockController extends Controller
                 ];
             });
 
-            $base->secureFilename = $this->cryptoJsAesEncrypt($secret, $base->product_image);
+            $base->secureFilename = $this->encryptFilename($base->product_image . ".jpg");
             $base->variant_count = $items->count();
 
             return $base;

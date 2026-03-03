@@ -325,4 +325,10 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('retailerupdate', [\App\Http\Controllers\Backend\Retailer\RetailerController::class, 'retailerUpdate'])->name('retailerupdate');
     Route::post('retailerstatus/{id}/{status}', [\App\Http\Controllers\Backend\Retailer\RetailerController::class, 'retailerStatus'])->name('retailerstatus');
     Route::get('/proxy-pincode/{pincode}', [\App\Http\Controllers\Backend\Retailer\RetailerController::class, 'pincode'])->name('retailerpincode');
+
+
+    //Customer
+    Route::get('customerlist', [\App\Http\Controllers\Backend\Customer\CustomerController::class, 'customerList'])->name('customerlist');
+    Route::get('customerdata', [\App\Http\Controllers\Backend\Customer\CustomerController::class, 'customerData'])->name('customerdata');
+    Route::get('customerlogdata', [\App\Http\Controllers\Backend\Customer\CustomerController::class, 'customerLogData'])->name('customerlogdata');
 });

@@ -24,4 +24,12 @@ final class Projects extends Enum
     const ILABANGLES = 'ILA BANGLES';
     const MARIYA = 'MARIYA';
     const ISHTAA = 'ISHTAA';
+    const RINGS = 'RINGS';
+    const CHIARA = 'CHIARA';
+    const DIRECTCASTING = 'DIRECT CASTING';
+    const EKTARA = 'EKTARA';
+    const FUSION = 'FUSION';
+    const KALAKRITI = 'KALAKRITI';
+    const MANGALSUTRA = 'MANGALSUTRA';
+    const THINCASTING = 'THIN CASTING';
 }

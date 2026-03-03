@@ -34,6 +34,11 @@
                     </svg>
                 </a>
             </li> --}}
+            @guest
+                <li class="me-3">
+                    <a href="#" class="btn btn-dark">Login</a>
+                </li>
+            @endguest
             <li class="position-relative me-3">
                 <a class="nav-link" href="{{ route('retailercart') }}">
                     <span>
@@ -97,6 +102,11 @@
                 <div class="mt-1">WISHLIST</div>
             </a>
         </li> --}}
+        @guest
+            <li>
+                <a href="#" class="btn btn-dark">Login</a>
+            </li>
+        @endguest
         <li class="position-relative me-3">
             <a class="nav-link" href="{{ route('retailercart') }}">
                 <span>

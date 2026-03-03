@@ -13,6 +13,7 @@ use App\Traits\Common;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
@@ -31,7 +32,7 @@ class CartController extends Controller
             ->join('products', 'products.id', '=', 'product_variants.product_id')
             ->where('carts.user_id', Auth::id())
             ->get();
-        
+
         $dealer = User::where('role_id', Roles::Dealer)->where('is_active', 1)->orderby('name', 'ASC')->get();
         $cartQty = Cart::where('user_id', Auth::user()->id)->sum('qty');
         $cartWeight = Cart::select(DB::raw('SUM(carts.qty * product_variants.weight) as totalWeight'))
@@ -62,16 +63,46 @@ class CartController extends Controller
         return urlencode(base64_encode($ciphertext));
     }
 
+    public function encryptFilename($filename)
+    {
+        if (!$filename) return null;
+
+        return Cache::remember('img_encrypt_' . md5($filename), 86400, function () use ($filename) {
+
+            try {
+                $response = Http::timeout(15)
+                    ->withHeaders([
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json'
+                    ])
+                    ->post('https://imageurl.ejindia.com/api/image/encrypt', [
+                        'filename' => $filename
+                    ]);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+
+                    // IMPORTANT → correct field
+                    return $data['urlSafe'] ?? null;
+                }
+
+                return null;
+            } catch (Exception $e) {
+                return null;
+            }
+        });
+    }
+
     function getCartProducts()
     {
-        $secret = 'EmeraldAdmin';
+        // $secret = 'EmeraldAdmin';
         $carts = Cart::join('product_variants', 'product_variants.id', 'carts.product_id')
             ->join('products', 'products.id', 'product_variants.product_id')
             ->where('carts.user_id', Auth::user()->id)
             ->select('carts.*', 'product_variants.qty as stock', 'products.product_image', 'products.DesignNo', 'product_variants.weight')
             ->get()
-            ->map(function ($product) use ($secret) {
-                $product->secureFilename = $this->cryptoJsAesEncrypt($secret, $product->product_image);
+            ->map(function ($product) {
+                $product->secureFilename = $this->encryptFilename($product->product_image . ".jpg");
                 return $product;
             });
 
